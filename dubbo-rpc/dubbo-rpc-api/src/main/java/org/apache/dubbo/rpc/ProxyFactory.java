@@ -25,6 +25,13 @@ import static org.apache.dubbo.rpc.Constants.PROXY_KEY;
 
 /**
  * ProxyFactory. (API/SPI, Singleton, ThreadSafe)
+ *
+ *  实现分为 {@link org.apache.dubbo.rpc.proxy.AbstractProxyFactory} 和 {@link org.apache.dubbo.rpc.proxy.wrapper.StubProxyFactoryWrapper}
+ *
+ *  {@link org.apache.dubbo.rpc.proxy.AbstractProxyFactory} 再拆分为 javassist 和  jdkProxy
+ *
+ *  invoker 是 proxy定义， proxy是实际使用对象
+ *
  */
 @SPI(value = "javassist", scope = FRAMEWORK)
 public interface ProxyFactory {

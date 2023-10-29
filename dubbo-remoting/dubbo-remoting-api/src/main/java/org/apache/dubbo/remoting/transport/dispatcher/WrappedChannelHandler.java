@@ -34,6 +34,9 @@ import org.apache.dubbo.rpc.executor.ExecutorSupport;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
+/**
+ *  netty 消息分发 {@link ChannelHandler } 的实际实现
+ */
 public class WrappedChannelHandler implements ChannelHandlerDelegate {
 
     protected static final ErrorTypeAwareLogger logger = LoggerFactory.getErrorTypeAwareLogger(WrappedChannelHandler.class);

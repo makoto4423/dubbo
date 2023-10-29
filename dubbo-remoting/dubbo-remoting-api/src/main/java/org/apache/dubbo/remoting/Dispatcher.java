@@ -34,6 +34,8 @@ public interface Dispatcher {
      * @param handler
      * @param url
      * @return channel handler
+     *
+     * 如注释， 分发消息到线程池
      */
     @Adaptive({Constants.DISPATCHER_KEY, "dispather", "channel.handler"})
     // The last two parameters are reserved for compatibility with the old configuration
