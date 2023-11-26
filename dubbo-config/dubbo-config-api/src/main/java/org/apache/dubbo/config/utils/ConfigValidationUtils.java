@@ -192,6 +192,7 @@ public class ConfigValidationUtils {
 
     public static final String IPV6_END_MARK = "]";
 
+    // 此处从注册中心读取可消费对象
     public static List<URL> loadRegistries(AbstractInterfaceConfig interfaceConfig, boolean provider) {
         // check && override if necessary
         List<URL> registryList = new ArrayList<>();
@@ -214,8 +215,10 @@ public class ConfigValidationUtils {
                     map.put(PATH_KEY, RegistryService.class.getName());
                     AbstractInterfaceConfig.appendRuntimeParameters(map);
                     if (!map.containsKey(PROTOCOL_KEY)) {
+                        // map是个参数字段，设置PROTOCOL_KEY保证当url无法解析出PROTOCOL_KEY时，dubbo作为备用选项
                         map.put(PROTOCOL_KEY, DUBBO_PROTOCOL);
                     }
+                    // 注册中心url填充属性，PROTOCOL_KEY，USERNAME_KEY，PASSWORD_KEY，PORT_KEY，PATH_KEY
                     List<URL> urls = UrlUtils.parseURLs(address, map);
 
                     for (URL url : urls) {

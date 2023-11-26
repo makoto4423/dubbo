@@ -82,6 +82,7 @@ public final class DubboBootstrap {
 
     private static final Logger logger = LoggerFactory.getLogger(DubboBootstrap.class);
 
+    // 不用string做key，ApplicationModel内也没重写hashCode
     private static final ConcurrentMap<ApplicationModel, DubboBootstrap> instanceMap = new ConcurrentHashMap<>();
     private static volatile DubboBootstrap instance;
 

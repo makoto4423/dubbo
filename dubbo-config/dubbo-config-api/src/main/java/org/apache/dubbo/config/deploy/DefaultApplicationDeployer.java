@@ -628,7 +628,7 @@ public class DefaultApplicationDeployer extends AbstractDeployer<ApplicationMode
 
     /**
      * Start the bootstrap
-     *
+     * 容器初始化顺序
      * @return
      */
     @Override

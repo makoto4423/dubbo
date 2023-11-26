@@ -483,6 +483,7 @@ public abstract class AbstractConfigManager extends LifecycleAdapter {
         PropertiesConfiguration properties = environment.getPropertiesConfiguration();
 
         // load multiple configs with id
+        // demo-api此处为空
         Set<String> configIds = this.getConfigIdsFromProps(cls);
         configIds.forEach(id -> {
             if (!this.getConfig(cls, id).isPresent()) {

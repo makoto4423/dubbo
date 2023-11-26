@@ -24,6 +24,7 @@ import java.util.concurrent.Future;
 
 /**
  * initialize and start application instance
+ * 应用容器
  */
 public interface ApplicationDeployer extends Deployer<ApplicationModel> {
 

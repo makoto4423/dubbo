@@ -24,6 +24,7 @@ import org.apache.dubbo.config.RegistryConfig;
 import org.apache.dubbo.config.ReferenceConfig;
 import org.apache.dubbo.config.bootstrap.DubboBootstrap;
 import org.apache.dubbo.demo.DemoService;
+import org.apache.dubbo.rpc.model.ApplicationModel;
 import org.apache.dubbo.rpc.service.GenericService;
 
 public class Application {
@@ -48,6 +49,8 @@ public class Application {
             .reference(reference)
             .start();
 
+//        DemoService d = reference.get(true);
+//        d.sayHello("name");
         DemoService demoService = bootstrap.getCache().get(reference);
         String message = demoService.sayHello("dubbo");
         System.out.println(message);
@@ -56,7 +59,7 @@ public class Application {
         GenericService genericService = (GenericService) demoService;
         Object genericInvokeResult = genericService.$invoke("sayHello", new String[]{String.class.getName()},
             new Object[]{"dubbo generic invoke"});
-        System.out.println(genericInvokeResult.toString());
+        System.out.println("end" + genericInvokeResult.toString());
     }
 
 }

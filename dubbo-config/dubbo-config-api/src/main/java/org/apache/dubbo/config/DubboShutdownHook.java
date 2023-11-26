@@ -144,6 +144,10 @@ public class DubboShutdownHook extends Thread {
     public void register() {
         if (!ignoreListenShutdownHook && registered.compareAndSet(false, true)) {
             try {
+                /**
+                 *  {@link DubboShutdownHook#run()}
+                 *  jvm destroy 触发
+                 */
                 Runtime.getRuntime().addShutdownHook(this);
             } catch (IllegalStateException e) {
                 logger.warn(CONFIG_FAILED_SHUTDOWN_HOOK, "", "", "register shutdown hook failed: " + e.getMessage(), e);

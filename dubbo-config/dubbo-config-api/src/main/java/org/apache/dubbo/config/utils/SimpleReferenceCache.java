@@ -129,6 +129,7 @@ public class SimpleReferenceCache implements ReferenceCache {
             referencesOfType.add(rc);
             List<ReferenceConfigBase<?>> referenceConfigList = ConcurrentHashMapUtils.computeIfAbsent(referenceKeyMap, key, _k -> Collections.synchronizedList(new ArrayList<>()));
             referenceConfigList.add(rc);
+            // 入口
             proxy = rc.get(check);
         }
 

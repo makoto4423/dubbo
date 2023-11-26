@@ -139,6 +139,7 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
 
     /**
      * The invoker of the reference service
+     * 此处的invoker是注册中心， 通过getProxy获得实际调用者
      */
     private transient volatile Invoker<?> invoker;
 
@@ -349,7 +350,7 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
             repository.registerConsumer(consumerModel);
 
             serviceMetadata.getAttachments().putAll(referenceParameters);
-
+            // 服务调用对象
             ref = createProxy(referenceParameters);
 
             serviceMetadata.setTarget(ref);
@@ -471,6 +472,11 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
                             " it's GenericService reference" : " it's not GenericService reference"));
         }
 
+        // 此处创建consumerUrl
+        // consumer://192.168.2.117/org.apache.dubbo.demo.DemoService?application=dubbo-demo-api-consumer
+        //              &background=false&dubbo=2.0.2&executor-management-mode=isolation&file-cache=true
+        //              &generic=true&interface=org.apache.dubbo.demo.DemoService&pid=22284
+        //              &register.ip=192.168.2.117&release=&side=consumer&sticky=false&timestamp=1701011340844&unloadClusterRelated=false
         URL consumerUrl = new ServiceConfigURL(CONSUMER_PROTOCOL, referenceParameters.get(REGISTER_IP_KEY), 0,
                 referenceParameters.get(INTERFACE_KEY), referenceParameters);
         consumerUrl = consumerUrl.setScopeModel(getScopeModel());
@@ -581,6 +587,11 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
     private void aggregateUrlFromRegistry(Map<String, String> referenceParameters) {
         checkRegistry();
         List<URL> us = ConfigValidationUtils.loadRegistries(this, false);
+        // 也就解决了注册中心的困惑，registry开头，参数registry指定使用的协议
+        // registry://127.0.0.1:2181/org.apache.dubbo.registry.RegistryService?
+        //              application=dubbo-demo-api-consumer&dubbo=2.0.2
+        //              &executor-management-mode=isolation&file-cache=true
+        //              &pid=8268&registry=zookeeper&timestamp=1700993250074
         if (CollectionUtils.isNotEmpty(us)) {
             for (URL u : us) {
                 URL monitorUrl = ConfigValidationUtils.loadMonitor(this, u);
@@ -658,6 +669,7 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
         }
     }
 
+    // 活性检测
     private void checkInvokerAvailable(long timeout) throws IllegalStateException {
         if (!shouldCheck()) {
             return;

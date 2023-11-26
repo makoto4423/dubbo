@@ -207,6 +207,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
 
     /**
      * The url of the reference service
+     * 注册中心的url
      */
     protected transient final List<URL> urls = new ArrayList<URL>();
 
