@@ -157,6 +157,7 @@ public abstract class AbstractRegistry implements Registry {
 
             // When starting the subscription center,
             // we need to read the local cache file for future Registry fault tolerance processing.
+            // 如注释，缓存注册中心用于冗灾
             loadProperties();
             notify(url.getBackupUrls());
         }

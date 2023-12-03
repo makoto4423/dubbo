@@ -527,7 +527,11 @@ public class RegistryProtocol implements Protocol, ScopeModelAware {
     @Override
     @SuppressWarnings("unchecked")
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {
+        // registry://127.0.0.1:2181/org.apache.dubbo.registry.RegistryService?application=dubbo-demo-api-consumer&dubbo=2.0.2
+        // &executor-management-mode=isolation&file-cache=true&pid=9036&registry=zookeeper&timestamp=1701588782246
         url = getRegistryUrl(url);
+        // zookeeper://127.0.0.1:2181/org.apache.dubbo.registry.RegistryService?application=dubbo-demo-api-consumer&dubbo=2.0.2
+        // &executor-management-mode=isolation&file-cache=true&pid=9036&timestamp=1701588782246
         Registry registry = getRegistry(url);
         if (RegistryService.class.equals(type)) {
             return proxyFactory.getInvoker((T) registry, type, url);
@@ -576,6 +580,7 @@ public class RegistryProtocol implements Protocol, ScopeModelAware {
      * This method tries to load all RegistryProtocolListener definitions, which are used to control the behaviour of invoker by interacting with defined, then uses those listeners to
      * change the status and behaviour of the MigrationInvoker.
      * <p>
+     * <p> RegistryProtocolListener 目前唯一实现 MigrationRuleListener  </p>
      * Currently available Listener is MigrationRuleListener, one used to control the Migration behaviour with dynamically changing rules.
      *
      * @param invoker     MigrationInvoker that determines which type of invoker list to use
@@ -645,6 +650,7 @@ public class RegistryProtocol implements Protocol, ScopeModelAware {
         return url.addParameter(CATEGORY_KEY, ALL_CATEGORIES);
     }
 
+    // doubt 为什么这里返回是list
     protected List<RegistryProtocolListener> findRegistryProtocolListeners(URL url) {
         return ScopeModelUtil.getExtensionLoader(RegistryProtocolListener.class, url.getScopeModel())
             .getActivateExtension(url, REGISTRY_PROTOCOL_LISTENER_KEY);

@@ -56,6 +56,7 @@ public abstract class AbstractZookeeperTransporter implements ZookeeperTransport
         List<String> addressList = getURLBackupAddress(url);
         // The field define the zookeeper server , including protocol, host, port, username, password
         if ((zookeeperClient = fetchAndUpdateZookeeperClientCache(addressList)) != null && zookeeperClient.isConnected()) {
+            // 连接池缓存
             logger.info("find valid zookeeper client from the cache for address: " + url);
             return zookeeperClient;
         }

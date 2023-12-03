@@ -37,10 +37,13 @@ public class Application {
         service.setInterface(DemoService.class);
         service.setRef(new DemoServiceImpl());
 
+        ProtocolConfig protocolConfig = new ProtocolConfig(CommonConstants.DUBBO, -1);
+        protocolConfig.setHost("169.254.43.72");
+
         DubboBootstrap bootstrap = DubboBootstrap.getInstance();
         bootstrap.application(new ApplicationConfig("dubbo-demo-api-provider"))
             .registry(new RegistryConfig(REGISTRY_URL))
-            .protocol(new ProtocolConfig(CommonConstants.DUBBO, -1))
+            .protocol(protocolConfig)
             .service(service)
             .start()
             .await();

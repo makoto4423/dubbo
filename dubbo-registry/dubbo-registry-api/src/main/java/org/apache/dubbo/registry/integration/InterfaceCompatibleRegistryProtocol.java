@@ -44,6 +44,7 @@ public class InterfaceCompatibleRegistryProtocol extends RegistryProtocol {
         return registryUrl;
     }
 
+    // 拼装使用的注册中心url
     @Override
     protected URL getRegistryUrl(URL url) {
         return URLBuilder.from(url)
