@@ -23,6 +23,7 @@ import org.apache.dubbo.config.RegistryConfig;
 import org.apache.dubbo.config.ServiceConfig;
 import org.apache.dubbo.config.bootstrap.DubboBootstrap;
 import org.apache.dubbo.demo.DemoService;
+import org.apache.dubbo.demo.GreetingService;
 
 public class Application {
 
@@ -37,14 +38,19 @@ public class Application {
         service.setInterface(DemoService.class);
         service.setRef(new DemoServiceImpl());
 
+        ServiceConfig<GreetingService> greet = new ServiceConfig<>();
+        greet.setInterface(GreetingService.class);
+        greet.setRef(new GreetingServiceImpl());
+
         ProtocolConfig protocolConfig = new ProtocolConfig(CommonConstants.DUBBO, -1);
-        protocolConfig.setHost("169.254.43.72");
+        protocolConfig.setHost("192.168.1.7");
 
         DubboBootstrap bootstrap = DubboBootstrap.getInstance();
         bootstrap.application(new ApplicationConfig("dubbo-demo-api-provider"))
             .registry(new RegistryConfig(REGISTRY_URL))
             .protocol(protocolConfig)
             .service(service)
+            .service(greet)
             .start()
             .await();
     }

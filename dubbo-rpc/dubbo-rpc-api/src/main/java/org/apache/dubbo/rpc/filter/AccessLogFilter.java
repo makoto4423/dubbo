@@ -110,6 +110,7 @@ public class AccessLogFilter implements Filter {
         String accessLogKey = invoker.getUrl().getParameter(Constants.ACCESS_LOG_KEY);
         boolean isFixedPath = invoker.getUrl().getParameter(ACCESS_LOG_FIXED_PATH_KEY, true);
         if (StringUtils.isEmpty(accessLogKey)) {
+            // future 是全局的，一旦某个服务关闭access_log，会影响到所有服务。
             // Notice that disable accesslog of one service may cause the whole application to stop collecting accesslog.
             // It's recommended to use application level configuration to enable or disable accesslog if dynamically configuration is needed .
             if (future != null && !future.isCancelled()) {
@@ -119,6 +120,7 @@ public class AccessLogFilter implements Filter {
             return invoker.invoke(inv);
         }
 
+        // 但奇怪的是，access_log被关闭后就无法再次开启future(不去定时flush)，但仍往队列offer日志，直到队列长度达到阈值，再一次性flush日志
         if (scheduled.compareAndSet(false, true)) {
             future = inv.getModuleModel().getApplicationModel().getFrameworkModel().getBeanFactory()
                 .getBean(FrameworkExecutorRepository.class).getSharedScheduledExecutor()
@@ -156,6 +158,7 @@ public class AccessLogFilter implements Filter {
         }
     }
 
+    // 由触发 该函数的该时刻的isFixedPath 入参决定，accessLog的日志是否刷新到文件，不同服务同个accesslog不同isFixedPath配置会互相干扰
     private void writeLogSetToFile(String accessLog, Queue<AccessLogData> logSet, boolean isFixedPath) {
         try {
             if (ConfigUtils.isDefault(accessLog)) {
@@ -184,6 +187,7 @@ public class AccessLogFilter implements Filter {
     }
 
     private void processWithAccessKeyLogger(Queue<AccessLogData> logQueue, File file) throws IOException {
+        // FileWriter 线程安全，只要是同个jvm，本地启动两个进程这种的话则不行，不过日志方面也没必要追求太高线程安全
         FileWriter writer = new FileWriter(file, true);
         try {
             while (!logQueue.isEmpty()) {
