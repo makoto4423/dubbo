@@ -301,6 +301,7 @@ public final class ClassGenerator {
             getClass().getProtectionDomain());
     }
 
+    // 生成动态代理关键方法
     public Class<?> toClass(Class<?> neighborClass, ClassLoader loader, ProtectionDomain pd) {
         if (mCtc != null) {
             mCtc.detach();

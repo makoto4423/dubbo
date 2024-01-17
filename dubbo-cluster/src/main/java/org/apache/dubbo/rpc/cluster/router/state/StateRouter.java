@@ -54,6 +54,7 @@ public interface StateRouter<T> {
      * @param needToPrintMessage whether to print router state. Such as `use router branch a`.
      * @return state with route result
      * @since 3.0
+     * 多个invoker选合适
      */
     BitList<Invoker<T>> route(BitList<Invoker<T>> invokers, URL url, Invocation invocation,
                      boolean needToPrintMessage, Holder<RouterSnapshotNode<T>> nodeHolder) throws RpcException;
