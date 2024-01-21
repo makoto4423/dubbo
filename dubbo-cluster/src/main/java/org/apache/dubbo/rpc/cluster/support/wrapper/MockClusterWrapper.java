@@ -33,6 +33,7 @@ public class MockClusterWrapper implements Cluster {
         this.cluster = cluster;
     }
 
+    // 不改wrapper，这里是所有请求的入口
     @Override
     public <T> Invoker<T> join(Directory<T> directory, boolean buildFilterChain) throws RpcException {
         return new MockClusterInvoker<T>(directory,

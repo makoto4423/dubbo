@@ -464,6 +464,7 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
             // if protocols not in jvm checkRegistry
             aggregateUrlFromRegistry(referenceParameters);
         }
+        // 创建指向 注册中心的 invoker
         createInvoker();
 
         if (logger.isInfoEnabled()) {

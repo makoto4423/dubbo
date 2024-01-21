@@ -98,6 +98,7 @@ public class MockClusterInvoker<T> implements ClusterInvoker<T> {
         Result result;
 
         String value = getUrl().getMethodParameter(RpcUtils.getMethodName(invocation), MOCK_KEY, Boolean.FALSE.toString()).trim();
+        // 当没配置mock时，由invoker(默认是 failOverClusterInvoker)执行
         if (ConfigUtils.isEmpty(value)) {
             //no mock
             result = this.invoker.invoke(invocation);

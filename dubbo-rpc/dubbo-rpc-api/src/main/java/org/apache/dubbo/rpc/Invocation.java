@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 
 /**
  * Invocation. (API, Prototype, NonThreadSafe)
+ * invoker 的定义
  *
  * @serial Don't change the class name and package name.
  * @see org.apache.dubbo.rpc.Invoker#invoke(Invocation)

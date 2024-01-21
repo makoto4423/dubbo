@@ -132,10 +132,13 @@ public class ExtensionLoader<T> {
         new LinkedHashMap<>());
     private final    ConcurrentMap<String, Holder<Object>> cachedInstances        = new ConcurrentHashMap<>();
     private final    Holder<Object>                        cachedAdaptiveInstance = new Holder<>();
+    // 被 @Adaptive 注释的类 赋值此值
     private volatile Class<?>                              cachedAdaptiveClass    = null;
+    // spi 设置的值
     private          String                                cachedDefaultName;
     private volatile Throwable                             createAdaptiveInstanceError;
 
+    // wrapperClass, 没有被 @Wrapper 注释则加载，有的话需要走@Wrapper的逻辑
     private Set<Class<?>> cachedWrapperClasses;
 
     private final Map<String, IllegalStateException> exceptions = new ConcurrentHashMap<>();
@@ -553,6 +556,7 @@ public class ExtensionLoader<T> {
      * @throws IllegalStateException If the specified extension is not found.
      */
     public T getExtension(String name) {
+        // 默认是 wrap 类
         T extension = getExtension(name, true);
         if (extension == null) {
             throw new IllegalArgumentException("Not find extension: " + name);
@@ -1365,6 +1369,7 @@ public class ExtensionLoader<T> {
 
     /**
      * test if clazz is a wrapper class
+     * 判断wrapperClass的标准，是否包含该type的构造器
      * <p>
      * which has Constructor with given class type as its only argument
      */
@@ -1409,6 +1414,7 @@ public class ExtensionLoader<T> {
 
     private Class<?> getAdaptiveExtensionClass() {
         getExtensionClasses();
+        // 当找到 adaptive 注释的类直接返回，不再生成adaptive动态类
         if (cachedAdaptiveClass != null) {
             return cachedAdaptiveClass;
         }

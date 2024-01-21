@@ -20,6 +20,7 @@ import org.apache.dubbo.common.Node;
 
 /**
  * Invoker. (API/SPI, Prototype, ThreadSafe)
+ * invocation的执行者
  *
  * @see org.apache.dubbo.rpc.Protocol#refer(Class, org.apache.dubbo.common.URL)
  * @see org.apache.dubbo.rpc.InvokerListener

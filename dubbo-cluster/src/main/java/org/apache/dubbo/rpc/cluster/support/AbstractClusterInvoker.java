@@ -160,6 +160,7 @@ public abstract class AbstractClusterInvoker<T> implements ClusterInvoker<T> {
         }
         String methodName = invocation == null ? StringUtils.EMPTY_STRING : RpcUtils.getMethodName(invocation);
 
+        // 沿用上次使用的provider
         boolean sticky = invokers.get(0).getUrl()
             .getMethodParameter(methodName, CLUSTER_STICKY_KEY, DEFAULT_CLUSTER_STICKY);
 
