@@ -20,6 +20,7 @@ import org.apache.dubbo.common.extension.SPI;
 
 /**
  * Container. (SPI, Singleton, ThreadSafe)
+ * 去除了莫名其妙的logContainer的实现
  */
 @SPI("spring")
 public interface Container {

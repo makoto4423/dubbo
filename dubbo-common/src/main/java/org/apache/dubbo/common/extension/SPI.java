@@ -63,6 +63,9 @@ public @interface SPI {
 
     /**
      * scope of SPI, default value is application scope.
+     * 为spi加一层过滤条件
+     * 同一个容器，不同的scope 有不同的实现
+     * 但一个容器会存在多个scope？
      */
     ExtensionScope scope() default ExtensionScope.APPLICATION;
 }

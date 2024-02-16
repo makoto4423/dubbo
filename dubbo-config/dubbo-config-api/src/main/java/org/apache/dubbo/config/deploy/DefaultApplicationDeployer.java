@@ -209,9 +209,11 @@ public class DefaultApplicationDeployer extends AbstractDeployer<ApplicationMode
             if (initialized) {
                 return;
             }
+            // DeployListener#onInitialize
             onInitialize();
 
             // register shutdown hook
+            // dubboShutdownHook.register
             registerShutdownHook();
 
             startConfigCenter();
@@ -632,7 +634,7 @@ public class DefaultApplicationDeployer extends AbstractDeployer<ApplicationMode
      * @return
      */
     @Override
-    public Future start() {
+    public Future  start() {
         synchronized (startLock) {
             if (isStopping() || isStopped() || isFailed()) {
                 throw new IllegalStateException(getIdentifier() + " is stopping or stopped, can not start again");
@@ -659,6 +661,7 @@ public class DefaultApplicationDeployer extends AbstractDeployer<ApplicationMode
 
                 // pending -> starting : first start app
                 // started -> starting : re-start app
+                // 触发 DeployListener#onStarting
                 onStarting();
 
                 initialize();
@@ -1189,7 +1192,7 @@ public class DefaultApplicationDeployer extends AbstractDeployer<ApplicationMode
             return;
         }
         setStarting();
-        startFuture = new CompletableFuture();
+        startFuture = new CompletableFuture<>();
         if (logger.isInfoEnabled()) {
             logger.info(getIdentifier() + " is starting.");
         }

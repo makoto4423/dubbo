@@ -83,6 +83,7 @@ public final class DubboBootstrap {
     private static final Logger logger = LoggerFactory.getLogger(DubboBootstrap.class);
 
     // 不用string做key，ApplicationModel内也没重写hashCode
+    // ApplicationModel 关联 DubboBootStrap
     private static final ConcurrentMap<ApplicationModel, DubboBootstrap> instanceMap = new ConcurrentHashMap<>();
     private static volatile DubboBootstrap instance;
 
@@ -429,7 +430,9 @@ public final class DubboBootstrap {
      * @return current {@link DubboBootstrap} instance
      */
     public DubboBootstrap application(ApplicationConfig applicationConfig) {
+        // ApplicationConfig 关联 ApplicationModel
         applicationConfig.setScopeModel(applicationModel);
+        // ConfigManager 关联 ApplicationConfig
         configManager.setApplication(applicationConfig);
         return this;
     }
@@ -467,7 +470,9 @@ public final class DubboBootstrap {
      * @return current {@link DubboBootstrap} instance
      */
     public DubboBootstrap registry(RegistryConfig registryConfig) {
+        // RegistryConfig 关联 ApplicationModel
         registryConfig.setScopeModel(applicationModel);
+        // ConfigManager 关联 RegistryConfig
         configManager.addRegistry(registryConfig);
         return this;
     }
@@ -545,6 +550,8 @@ public final class DubboBootstrap {
     }
 
     public DubboBootstrap service(ServiceConfig<?> serviceConfig, ModuleModel moduleModel) {
+        // 这里可以看到 service 和其他属性的不同(protocol,registry)， 这里不再关联 ApplicationModel
+        // 具体可以看 ConfigManger 和 ModuleConfigManger  add 方法的区别
         serviceConfig.setScopeModel(moduleModel);
         moduleModel.getConfigManager().addService(serviceConfig);
         return this;

@@ -43,7 +43,7 @@ public class Application {
         greet.setRef(new GreetingServiceImpl());
 
         ProtocolConfig protocolConfig = new ProtocolConfig(CommonConstants.DUBBO, -1);
-        protocolConfig.setHost("192.168.1.7");
+        protocolConfig.setHost("192.168.1.6");
 
         DubboBootstrap bootstrap = DubboBootstrap.getInstance();
         bootstrap.application(new ApplicationConfig("dubbo-demo-api-provider"))

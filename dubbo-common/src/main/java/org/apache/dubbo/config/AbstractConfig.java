@@ -393,7 +393,7 @@ public abstract class AbstractConfig implements Serializable {
     }
 
     @Transient
-    public ApplicationModel getApplicationModel() {
+    public ApplicationModel  getApplicationModel() {
         if (scopeModel == null) {
             setScopeModel(getDefaultModel());
         }
@@ -419,6 +419,7 @@ public abstract class AbstractConfig implements Serializable {
         return ApplicationModel.defaultModel();
     }
 
+    // 继承类 都需要 设置 ScopeModel， 目前看到的都是 ApplicationModel
     public final void setScopeModel(ScopeModel scopeModel) {
         if (scopeModel != null && this.scopeModel != scopeModel) {
             checkScopeModel(scopeModel);

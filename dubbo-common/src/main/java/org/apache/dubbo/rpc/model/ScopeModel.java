@@ -42,6 +42,7 @@ public abstract class ScopeModel implements ExtensionAccessor {
     protected static final ErrorTypeAwareLogger LOGGER = LoggerFactory.getErrorTypeAwareLogger(ScopeModel.class);
 
     /**
+     * 代表层级关系， FrameworkModel -> ApplicationModel -> ModuleModel 从左到右依次生成
      * The internal id is used to represent the hierarchy of the model tree, such as:
      * <ol>
      *     <li>1</li>

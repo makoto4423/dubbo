@@ -52,6 +52,15 @@ import static org.apache.dubbo.config.AbstractConfig.getTagName;
 
 /**
  * Manage configs of module
+ * addConfig
+ * addConsumer
+ * addConsumers
+ * addProvider
+ * addProviders
+ * addReference
+ * addReferences
+ * addService
+ * addServices
  */
 public class ModuleConfigManager extends AbstractConfigManager implements ModuleExt {
 
