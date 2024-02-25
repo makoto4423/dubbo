@@ -160,6 +160,7 @@ public class ScopeBeanFactory {
         return bean;
     }
 
+    // 很明显的spring写法
     private void initializeBean(String name, Object bean) {
         checkDestroyed();
         try {

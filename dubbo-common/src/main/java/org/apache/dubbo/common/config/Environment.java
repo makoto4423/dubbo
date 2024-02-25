@@ -218,7 +218,7 @@ public class Environment extends LifecycleAdapter implements ApplicationExt {
 
     /**
      * Get configuration map list for target instance
-     *
+     * 读配置
      * @param config
      * @param prefix
      * @return
