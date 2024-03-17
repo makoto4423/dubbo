@@ -810,6 +810,7 @@ public class ExtensionLoader<T> {
                 List<Class<?>> wrapperClassesList = new ArrayList<>();
                 if (cachedWrapperClasses != null) {
                     wrapperClassesList.addAll(cachedWrapperClasses);
+                    // 用 @Wrapper 控制初始化顺序
                     wrapperClassesList.sort(WrapperComparator.COMPARATOR);
                     Collections.reverse(wrapperClassesList);
                 }
@@ -1432,6 +1433,9 @@ public class ExtensionLoader<T> {
 
         }
         String code = new AdaptiveClassCodeGenerator(type, cachedDefaultName).generate();
+        // 这里虽然又代理了一层，但是找一下 Compiler#setCompiler 的调用会发现，这里使用的不再是javassist
+        // debug这里也会看见 code 不再是 javassist的那种代码，而是原始的java代码，就是之前看到的javaCompiler
+        // 实时编译java源码，这里不用javassist的猜测，使用者无法控制远程的代码是否安全，但是Adaptive 是本地代码，可信
         org.apache.dubbo.common.compiler.Compiler compiler = extensionDirector.getExtensionLoader(
             org.apache.dubbo.common.compiler.Compiler.class).getAdaptiveExtension();
         return compiler.compile(type, code, classLoader);

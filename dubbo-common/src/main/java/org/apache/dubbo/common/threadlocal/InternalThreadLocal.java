@@ -30,6 +30,16 @@ import java.util.Set;
  * table, and it is useful when accessed frequently.
  * <p></p>
  * This design is learning from {@see io.netty.util.concurrent.FastThreadLocal} which is in Netty.
+ * 其实没必要继承 ThreadLocal</p>
+ * ThreadLocal 实现原理 每个Thread 持有 ThreadLocal.ThreadLocalMap<ThreadLocal#this, value> 通过hashmap保存value
+ * 关键属性 index， 每个 InternalThreadLocal 都会去申请一个新的index（InternalThreadLocalMap.nextVariableIndex）
+ * 通过InternalThreadLocalMap#get 这个静态方法获取值，底层是 object[], index获取值
+ * 然后剩下的是 怎么把 Thread 和 InternalThreadLocalMap 绑定到一起，InternalThreadLocalMap 这个肯定是不可能线程共享，
+ * 否则会有线程安全问题（多个线程公用一个ThreadLocal）
+ * 所有就需要构建一个新的Thread(InternalThread)持有一个InternalThreadLocalMap
+ * 同时为了兼容jdk原生的Thread，则有一个slow的方法
+ *
+ * 不过这里似乎有个问题，InternalThread结束后不会清除引用（没有重写Thread的exit），Thread#exit会由jdk自行调用
  */
 public class InternalThreadLocal<V> extends ThreadLocal<V> {
 
@@ -115,7 +125,7 @@ public class InternalThreadLocal<V> extends ThreadLocal<V> {
      * Returns the current value for the current thread
      */
     @SuppressWarnings("unchecked")
-    @Override
+//    @Override
     public final V get() {
         InternalThreadLocalMap threadLocalMap = InternalThreadLocalMap.get();
         Object v = threadLocalMap.indexedVariable(index);
@@ -152,7 +162,7 @@ public class InternalThreadLocal<V> extends ThreadLocal<V> {
     /**
      * Sets the value for the current thread.
      */
-    @Override
+//    @Override
     public final void set(V value) {
         if (value == null || value == InternalThreadLocalMap.UNSET) {
             remove();
@@ -168,7 +178,7 @@ public class InternalThreadLocal<V> extends ThreadLocal<V> {
      * Sets the value to uninitialized; a proceeding call to get() will trigger a call to initialValue().
      */
     @SuppressWarnings("unchecked")
-    @Override
+//    @Override
     public final void remove() {
         remove(InternalThreadLocalMap.getIfSet());
     }
@@ -199,7 +209,7 @@ public class InternalThreadLocal<V> extends ThreadLocal<V> {
     /**
      * Returns the initial value for this thread-local variable.
      */
-    @Override
+//    @Override
     protected V initialValue() {
         return null;
     }

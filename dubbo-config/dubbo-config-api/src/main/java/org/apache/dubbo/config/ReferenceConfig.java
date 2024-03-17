@@ -654,6 +654,7 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
             if (registryUrl != null) {
                 // registry url is available
                 // for multi-subscription scenario, use 'zone-aware' policy by default
+                // 旧版这里使用 AvailableCluster，且是 MockClusterWrapper
                 String cluster = registryUrl.getParameter(CLUSTER_KEY, ZoneAwareCluster.NAME);
                 // The invoker wrap sequence would be: ZoneAwareClusterInvoker(StaticDirectory) -> FailoverClusterInvoker
                 // (RegistryDirectory, routing happens here) -> Invoker

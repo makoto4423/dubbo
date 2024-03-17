@@ -1,0 +1,66 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.dubbo.demo.provider;
+
+import org.apache.dubbo.common.constants.CommonConstants;
+import org.apache.dubbo.config.*;
+import org.apache.dubbo.config.bootstrap.DubboBootstrap;
+import org.apache.dubbo.demo.DemoService;
+import org.apache.dubbo.demo.GreetingService;
+
+public class Application_2 {
+
+    private static final String REGISTRY_URL = "zookeeper://127.0.0.1:2181";
+
+    public static void main(String[] args) {
+        startWithBootstrap();
+    }
+
+    private static void startWithBootstrap() {
+
+
+        ProtocolConfig dubboProtocol = new ProtocolConfig(CommonConstants.DUBBO, -1);
+        dubboProtocol.setHost("169.254.43.72");
+
+        ProtocolConfig jvmProtocol = new ProtocolConfig("injvm", -1);
+        dubboProtocol.setHost("192.168.2.117");
+
+        ConfigCenterConfig configCenterConfig = new ConfigCenterConfig();
+        configCenterConfig.setAddress(REGISTRY_URL);
+
+        ServiceConfig<DemoServiceImpl> service = new ServiceConfig<>();
+        service.setInterface(DemoService.class);
+        service.setRef(new DemoServiceImpl());
+        service.setProtocol(dubboProtocol);
+
+
+        ServiceConfig<GreetingService> greet = new ServiceConfig<>();
+        greet.setInterface(GreetingService.class);
+        greet.setRef(new GreetingServiceImpl());
+        greet.setProtocol(dubboProtocol);
+
+        DubboBootstrap bootstrap = DubboBootstrap.getInstance();
+        bootstrap.application(new ApplicationConfig("dubbo-demo-api-provider"))
+            .registry(new RegistryConfig(REGISTRY_URL))
+            .configCenter(configCenterConfig)
+            .service(service)
+            .service(greet)
+            .start()
+            .await();
+    }
+
+}

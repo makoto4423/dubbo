@@ -31,6 +31,7 @@ import javassist.CtNewMethod;
 import javassist.LoaderClassPath;
 import javassist.NotFoundException;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -353,6 +354,11 @@ public final class ClassGenerator {
                     }
                 }
             }
+            // 输出可发现，此处利用javassist 生成的是 应用级别的接口代理实现
+//            try {
+//                mCtc.writeFile("./");
+//            } catch (IOException ignore) {
+//            }
 
             try {
                 return mPool.toClass(mCtc, neighborClass, loader, pd);

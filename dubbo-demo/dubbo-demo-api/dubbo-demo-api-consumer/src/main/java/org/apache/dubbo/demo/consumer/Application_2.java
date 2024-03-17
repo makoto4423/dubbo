@@ -16,21 +16,18 @@
  */
 package org.apache.dubbo.demo.consumer;
 
-import org.apache.dubbo.common.constants.CommonConstants;
-
-import org.apache.dubbo.config.ProtocolConfig;
 import org.apache.dubbo.config.ApplicationConfig;
-import org.apache.dubbo.config.RegistryConfig;
 import org.apache.dubbo.config.ReferenceConfig;
+import org.apache.dubbo.config.RegistryConfig;
 import org.apache.dubbo.config.bootstrap.DubboBootstrap;
 import org.apache.dubbo.demo.DemoService;
-import org.apache.dubbo.rpc.model.ApplicationModel;
+import org.apache.dubbo.demo.GreetingService;
+import org.apache.dubbo.rpc.RpcContext;
 import org.apache.dubbo.rpc.service.GenericService;
 
-public class Application {
+public class Application_2 {
 
     private static final String REGISTRY_URL = "zookeeper://127.0.0.1:2181";
-    private static final String REGISTRY_URL_2 = "zookeeper://127.0.0.1:2182";
 
 
 
@@ -42,26 +39,35 @@ public class Application {
         ReferenceConfig<DemoService> reference = new ReferenceConfig<>();
         reference.setInterface(DemoService.class);
         reference.setGeneric("true");
+        reference.setProtocol("dubbo");
+
+        ReferenceConfig<GreetingService> greet = new ReferenceConfig<>();
+        greet.setInterface(GenericService.class);
+        greet.setProtocol("dubbo");
 
         DubboBootstrap bootstrap = DubboBootstrap.getInstance();
         bootstrap.application(new ApplicationConfig("dubbo-demo-api-consumer"))
             .registry(new RegistryConfig(REGISTRY_URL))
-            .registry(new RegistryConfig(REGISTRY_URL_2))
-            .protocol(new ProtocolConfig(CommonConstants.DUBBO, -1))
             .reference(reference)
+            .reference(greet)
             .start();
-
+        RpcContext.getServerContext();
+        RpcContext.getServiceContext();
+        RpcContext.getClientAttachment().getUrl();
 //        DemoService d = reference.get(true);
 //        d.sayHello("name");
         DemoService demoService = bootstrap.getCache().get(reference);
         String message = demoService.sayHello("dubbo");
         System.out.println(message);
 
-        // generic invoke
-        GenericService genericService = (GenericService) demoService;
-        Object genericInvokeResult = genericService.$invoke("sayHello", new String[]{String.class.getName()},
-            new Object[]{"dubbo generic invoke"});
-        System.out.println("end" + genericInvokeResult.toString());
+        GreetingService greetingService = bootstrap.getCache().get(greet);
+        System.out.println(greetingService.hello());
+
+//        // generic invoke
+//        GenericService genericService = (GenericService) demoService;
+//        Object genericInvokeResult = genericService.$invoke("sayHello", new String[]{String.class.getName()},
+//            new Object[]{"dubbo generic invoke"});
+//        System.out.println("end" + genericInvokeResult.toString());
     }
 
 }
