@@ -25,13 +25,16 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * memory limiter.
+ * 内存限制
  */
 public class MemoryLimiter {
 
+    // 计算 一个对象的内存消耗
     private final Instrumentation inst;
 
     private long memoryLimit;
 
+    // 功能类似于 AtomicLong， LongAdder 能支持更高的吞吐量，但有更多的内存空间消耗
     private final LongAdder memory = new LongAdder();
 
     private final ReentrantLock acquireLock = new ReentrantLock();

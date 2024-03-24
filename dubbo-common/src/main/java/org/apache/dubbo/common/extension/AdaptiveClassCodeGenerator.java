@@ -264,10 +264,14 @@ public class AdaptiveClassCodeGenerator {
 
     /**
      * generate extName assignment code
+     * @param value 是由 createAdaptiveClass 触发的，value如果没有赋值，用 class name 作默认值
+     * @param hasInvocation test if method has argument of type <code>Invocation</code>
+     * Adaptive 的使用
      */
     private String generateExtNameAssignment(String[] value, boolean hasInvocation) {
         // TODO: refactor it
         String getNameCode = null;
+        // 反序遍历，确保 第一个 value 最优先
         for (int i = value.length - 1; i >= 0; --i) {
             if (i == value.length - 1) {
                 if (null != defaultExtName) {
@@ -294,8 +298,10 @@ public class AdaptiveClassCodeGenerator {
             } else {
                 if (!CommonConstants.PROTOCOL_KEY.equals(value[i])) {
                     if (hasInvocation) {
+                        // 如果 入参有 invocation ，会弃用 之前的 getNameCode
                         getNameCode = String.format("url.getMethodParameter(methodName, \"%s\", \"%s\")", value[i], defaultExtName);
                     } else {
+                        // 否则， 则 url.getParameter(value, getNameCode)
                         getNameCode = String.format("url.getParameter(\"%s\", %s)", value[i], getNameCode);
                     }
                 } else {
@@ -355,6 +361,7 @@ public class AdaptiveClassCodeGenerator {
     private String[] getMethodAdaptiveValue(Adaptive adaptiveAnnotation) {
         String[] value = adaptiveAnnotation.value();
         // value is not set, use the value generated from class name as the key
+        // Adaptive 没有赋值，则用 class name
         if (value.length == 0) {
             String splitName = StringUtils.camelToSplitName(type.getSimpleName(), ".");
             value = new String[]{splitName};

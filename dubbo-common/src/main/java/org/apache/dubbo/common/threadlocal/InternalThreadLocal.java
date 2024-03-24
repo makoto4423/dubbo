@@ -99,6 +99,8 @@ public class InternalThreadLocal<V> extends ThreadLocal<V> {
         Object v = threadLocalMap.indexedVariable(VARIABLES_TO_REMOVE_INDEX);
         Set<InternalThreadLocal<?>> variablesToRemove;
         if (v == InternalThreadLocalMap.UNSET || v == null) {
+            // This class implements the Map interface with a hash table, using reference-equality in place of object-equality when comparing keys (and values)
+            // IdentityHashMap#put 看重写的put方法，item == k，而hashmap用的是 equal，所以Integer 作为key的时候，会有所不同
             variablesToRemove = Collections.newSetFromMap(new IdentityHashMap<InternalThreadLocal<?>, Boolean>());
             threadLocalMap.setIndexedVariable(VARIABLES_TO_REMOVE_INDEX, variablesToRemove);
         } else {

@@ -22,6 +22,13 @@ public class AtomicPositiveInteger extends Number {
 
     private static final long serialVersionUID = -3038533876489105940L;
 
+    /**
+     * AtomicIntegerFieldUpdater:
+     * 当 AtomicPositiveInteger#index 的属性不是 线程安全，但又想线程安全使用这个属性的时候，用来封装，index属性需要是 volatile
+     * 就是说 既可以在需要的时候线程安全使用，也可以不线程安全的使用
+     * 还有一点，当类脱离开发控制时使用
+     * 网上说节省了内存，但是没看懂，两者底层都是一样的
+     */
     private static final AtomicIntegerFieldUpdater<AtomicPositiveInteger> INDEX_UPDATER =
             AtomicIntegerFieldUpdater.newUpdater(AtomicPositiveInteger.class, "index");
 
