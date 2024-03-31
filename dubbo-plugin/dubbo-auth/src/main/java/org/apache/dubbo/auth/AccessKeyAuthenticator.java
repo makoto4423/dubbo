@@ -36,6 +36,7 @@ public class AccessKeyAuthenticator implements Authenticator {
         this.applicationModel = applicationModel;
     }
 
+    // 消费方传输密码
     @Override
     public void sign(Invocation invocation, URL url) {
         String currentTime = String.valueOf(System.currentTimeMillis());
@@ -46,6 +47,7 @@ public class AccessKeyAuthenticator implements Authenticator {
         invocation.setAttachment(CommonConstants.CONSUMER, url.getApplication());
     }
 
+    // 提供方校验密码
     @Override
     public void authenticate(Invocation invocation, URL url) throws RpcAuthenticationException {
         String accessKeyId = String.valueOf(invocation.getAttachment(Constants.AK_KEY));

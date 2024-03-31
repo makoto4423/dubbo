@@ -49,6 +49,8 @@ import static org.apache.dubbo.common.utils.ReflectUtils.defaultReturn;
  * AsyncRpcResult does not contain any concrete value (except the underlying value bring by CompletableFuture), consider it as a status transfer node.
  * {@link #getValue()} and {@link #getException()} are all inherited from {@link Result} interface, implementing them are mainly
  * for compatibility consideration. Because many legacy {@link Filter} implementation are most possibly to call getValue directly.
+ *
+ * 未完成，只是个future
  */
 public class AsyncRpcResult implements Result {
     private static final ErrorTypeAwareLogger logger = LoggerFactory.getErrorTypeAwareLogger(AsyncRpcResult.class);

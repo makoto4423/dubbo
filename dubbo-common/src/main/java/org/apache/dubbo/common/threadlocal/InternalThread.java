@@ -19,6 +19,7 @@ package org.apache.dubbo.common.threadlocal;
 
 /**
  * InternalThread
+ * dubbo 中的 FastThread
  */
 public class InternalThread extends Thread {
 

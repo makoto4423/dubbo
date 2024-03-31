@@ -61,6 +61,7 @@ public interface RegistryConstants {
 
     String COMPATIBLE_CONFIG_KEY = "compatible_config";
 
+    // todo 这是什么
     String REGISTER_MODE_KEY = "register-mode";
 
     String DUBBO_REGISTER_MODE_DEFAULT_KEY = "dubbo.application.register-mode";

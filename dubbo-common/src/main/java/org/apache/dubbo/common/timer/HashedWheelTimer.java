@@ -81,6 +81,8 @@ import static org.apache.dubbo.common.constants.LoggerCodeConstants.COMMON_ERROR
  * and Hierarchical Timing Wheels: data structures to efficiently implement a
  * timer facility'</a>.  More comprehensive slides are located
  * <a href="http://www.cse.wustl.edu/~cdgill/courses/cs6874/TimingWheels.ppt">here</a>.
+ *
+ * 时间轮，替代 定时任务，每次插入放到具体的槽，由此方法统一调用执行
  */
 public class HashedWheelTimer implements Timer {
 

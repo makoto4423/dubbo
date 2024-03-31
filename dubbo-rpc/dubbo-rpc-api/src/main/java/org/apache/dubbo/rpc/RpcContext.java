@@ -122,7 +122,7 @@ public class RpcContext {
 
     /**
      * get server side context. ( A <-- B , in B side)
-     *
+     * 这里没再使用 InternalThreadLocal
      * @return server context
      */
     public static RpcContextAttachment getServerContext() {
@@ -162,7 +162,7 @@ public class RpcContext {
 
     /**
      * get consumer side attachment ( A --> B , in A side)
-     *
+     * CLIENT_ATTACHMENT 定义， A调用B时， 代表A侧context， RpcContextAttachment
      * @return context
      */
     public static RpcContextAttachment getClientAttachment() {
@@ -171,7 +171,7 @@ public class RpcContext {
 
     /**
      * get provider side attachment from consumer ( A --> B , in B side)
-     *
+     * SERVER_ATTACHMENT 定义， A调用B时， 代表B侧context， RpcContextAttachment
      * @return context
      */
     public static RpcContextAttachment getServerAttachment() {
@@ -196,7 +196,7 @@ public class RpcContext {
     /**
      * Using to pass environment parameters in the whole invocation. For example, `remotingApplicationName`,
      * `remoteAddress`, etc. {@link RpcServiceContext}
-     *
+     * 生命周期是整个invocation
      * @return context
      */
     public static RpcServiceContext getServiceContext() {

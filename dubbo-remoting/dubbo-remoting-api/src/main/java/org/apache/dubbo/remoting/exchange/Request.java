@@ -36,6 +36,7 @@ public class Request {
 
     private String mVersion;
 
+    // twoWay 含义： 就是请求&响应，区别于oneWay， 就是消费者只管发，不需要响应
     private boolean mTwoWay = true;
 
     private boolean mEvent = false;

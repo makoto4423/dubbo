@@ -61,6 +61,7 @@ import static org.apache.dubbo.common.constants.LoggerCodeConstants.COMMON_UNEXP
 
 /**
  * Consider implementing {@code Lifecycle} to enable executors shutdown when the process stops.
+ * 线程池类型并发
  */
 public class DefaultExecutorRepository implements ExecutorRepository, ExtensionAccessorAware {
     private static final ErrorTypeAwareLogger logger = LoggerFactory.getErrorTypeAwareLogger(DefaultExecutorRepository.class);
