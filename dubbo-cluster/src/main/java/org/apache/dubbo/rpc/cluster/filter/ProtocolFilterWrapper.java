@@ -34,6 +34,7 @@ import static org.apache.dubbo.common.constants.CommonConstants.SERVICE_FILTER_K
 
 /**
  * ListenerProtocol
+ * ProtocolXXXXWrapper
  */
 @Activate(order = 100)
 public class ProtocolFilterWrapper implements Protocol {
@@ -54,6 +55,7 @@ public class ProtocolFilterWrapper implements Protocol {
 
     @Override
     public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
+        // 构建 provider的调用链， 加入filter
         if (UrlUtils.isRegistry(invoker.getUrl())) {
             return protocol.export(invoker);
         }
@@ -67,6 +69,7 @@ public class ProtocolFilterWrapper implements Protocol {
 
     @Override
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {
+        // 构建 consumer的调用链， 加入filter
         if (UrlUtils.isRegistry(url)) {
             return protocol.refer(type, url);
         }

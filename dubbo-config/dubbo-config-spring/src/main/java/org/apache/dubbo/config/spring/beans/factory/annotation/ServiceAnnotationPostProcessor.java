@@ -358,6 +358,7 @@ public class ServiceAnnotationPostProcessor implements BeanDefinitionRegistryPos
         AbstractBeanDefinition serviceBeanDefinition =
                 buildServiceBeanDefinition(serviceAnnotationAttributes, serviceInterface, annotatedServiceBeanName);
 
+        // 使用 beanName 注册到spring中，重复的provider在这里导致报错
         registerServiceBeanDefinition(beanName, serviceBeanDefinition, serviceInterface);
 
     }
@@ -385,7 +386,7 @@ public class ServiceAnnotationPostProcessor implements BeanDefinitionRegistryPos
 
     /**
      * Generates the bean name of {@link ServiceBean}
-     *
+     * 生成provider的唯一name
      * @param serviceAnnotationAttributes
      * @param serviceInterface              the class of interface annotated {@link Service}
      * @return ServiceBean@interfaceClassName#annotatedServiceBeanName

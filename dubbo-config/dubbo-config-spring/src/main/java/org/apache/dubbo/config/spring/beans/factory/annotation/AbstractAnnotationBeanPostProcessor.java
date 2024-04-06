@@ -134,6 +134,8 @@ public abstract class AbstractAnnotationBeanPostProcessor implements
 
         ReflectionUtils.doWithFields(beanClass, field -> {
 
+            // getAnnotationTypes
+            // 读取 DubboReference 属性 不过为什么不直接读呢，绕了一圈看着费劲
             for (Class<? extends Annotation> annotationType : getAnnotationTypes()) {
 
                 AnnotationAttributes attributes = AnnotationUtils.getAnnotationAttributes(field, annotationType, getEnvironment(), true, true);

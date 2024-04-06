@@ -30,8 +30,16 @@ import org.springframework.stereotype.Service;
 @EnableDubbo
 public class ConsumerApplication {
 
-    @DubboReference
+    /**
+     * reference 会在 /dubbo/org.apache.dubbo.springboot.demo.DemoService/consumers 生成子节点
+     * 似乎是根据url进行去重，现在这里只有两个节点
+     */
+    @DubboReference(parameters = {"makoto", "makoto"})
     private DemoService demoService;
+    @DubboReference
+    private DemoService demoService2;
+    @DubboReference
+    private DemoService demoService3;
 
     public static void main(String[] args) {
 
@@ -39,9 +47,12 @@ public class ConsumerApplication {
         ConsumerApplication application = context.getBean(ConsumerApplication.class);
         String result = application.doSayHello("world");
         System.out.println("result: " + result);
+        System.out.println(application.doSayHello2("you"));
     }
 
     public String doSayHello(String name) {
         return demoService.sayHello(name);
     }
+
+    public String doSayHello2(String name) {return demoService2.sayHello(name);}
 }

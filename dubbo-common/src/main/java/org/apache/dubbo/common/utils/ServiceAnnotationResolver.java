@@ -69,6 +69,7 @@ public class ServiceAnnotationResolver {
 
         Annotation serviceAnnotation = null;
 
+        // 读取 DubboService 的属性
         for (Class<? extends Annotation> serviceAnnotationClass : SERVICE_ANNOTATION_CLASSES) {
             serviceAnnotation = serviceType.getAnnotation(serviceAnnotationClass);
             if (serviceAnnotation != null) {
