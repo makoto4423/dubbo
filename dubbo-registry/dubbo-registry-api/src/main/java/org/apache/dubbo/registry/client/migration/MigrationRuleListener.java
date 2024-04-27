@@ -102,7 +102,7 @@ public class MigrationRuleListener implements RegistryProtocolListener, Configur
         if (this.configuration != null) {
             logger.info("Listening for migration rules on dataId " + ruleKey + ", group " + DUBBO_SERVICEDISCOVERY_MIGRATION);
             configuration.addListener(ruleKey, DUBBO_SERVICEDISCOVERY_MIGRATION, this);
-
+            // 动态配置用于 流量治理规则存储
             String rawRule = configuration.getConfig(ruleKey, DUBBO_SERVICEDISCOVERY_MIGRATION);
             if (StringUtils.isEmpty(rawRule)) {
                 rawRule = INIT;

@@ -296,6 +296,7 @@ public class DefaultApplicationDeployer extends AbstractDeployer<ApplicationMode
                 environment.updateAppExternalConfigMap(configCenter.getAppExternalConfiguration());
 
                 // Fetch config from remote config center
+                // 从配置中心获取配置
                 compositeDynamicConfiguration.addConfiguration(prepareEnvironment(configCenter));
             }
             environment.setDynamicConfiguration(compositeDynamicConfiguration);
@@ -336,6 +337,7 @@ public class DefaultApplicationDeployer extends AbstractDeployer<ApplicationMode
      * For compatibility purpose, use registry as the default config center when
      * there's no config center specified explicitly and
      * useAsConfigCenter of registryConfig is null or true
+     * 当配置中心为空时，使用注册中心作为配置中心
      */
     private void useRegistryAsConfigCenterIfNecessary() {
         // we use the loading status of DynamicConfiguration to decide whether ConfigCenter has been initiated.
@@ -464,6 +466,8 @@ public class DefaultApplicationDeployer extends AbstractDeployer<ApplicationMode
         return cc;
     }
 
+
+    // metadataCenter 同理
     private void useRegistryAsMetadataCenterIfNecessary() {
 
         Collection<MetadataReportConfig> originMetadataConfigs = configManager.getMetadataConfigs();

@@ -23,13 +23,13 @@ import org.apache.dubbo.springboot.demo.DemoService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@DubboService
+//@DubboService
 public class DemoServiceImpl2 implements DemoService {
 
     private static final Logger logger = LoggerFactory.getLogger(DemoServiceImpl2.class);
     @Override
     public String sayHello(String name) {
-        logger.info("Hello " + name + ", request from consumer: " + RpcContext.getContext().getRemoteAddress());
+        logger.info("Hello {}, request from consumer: {}", name, RpcContext.getContext().getRemoteAddress());
         return "Hello " + name;
 
     }

@@ -285,6 +285,7 @@ public class RpcUtils {
         int timeout = (int) defaultTimeout;
         if (countdown == null) {
             if (url != null) {
+                // timeout 优先级 context > invocation > url
                 timeout = (int) RpcUtils.getTimeout(url, methodName, RpcContext.getClientAttachment(), invocation, defaultTimeout);
                 if (url.getMethodParameter(methodName, ENABLE_TIMEOUT_COUNTDOWN_KEY, false)) {
                     // pass timeout to remote server
