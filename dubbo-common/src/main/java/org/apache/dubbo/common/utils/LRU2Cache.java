@@ -148,6 +148,7 @@ public class LRU2Cache<K, V> extends LinkedHashMap<K, V> {
             this.maxCapacity = maxCapacity;
         }
 
+        // LinkedHashMap 本身就有实现lru，不过默认不开启
         @Override
         protected boolean removeEldestEntry(java.util.Map.Entry<K, V> eldest) {
             return size() > maxCapacity;

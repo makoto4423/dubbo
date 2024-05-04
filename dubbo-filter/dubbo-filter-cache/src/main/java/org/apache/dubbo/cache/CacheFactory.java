@@ -24,7 +24,8 @@ import org.apache.dubbo.rpc.Invocation;
 /**
  * Interface needs to be implemented by all the cache store provider.Along with implementing <b>CacheFactory</b> interface
  * entry needs to be added in org.apache.dubbo.cache.CacheFactory file in a classpath META-INF sub directories.
- *
+ * 使用factory 生成 Cache ，而不是使用通用的spi生成，是因为 spi生成的，是会共享key，而cache是需要每个method私有
+ * 具体看 {@link org.apache.dubbo.common.threadpool.ThreadPool$Adaptive}
  * @see Cache
  */
 @SPI("lru")

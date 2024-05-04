@@ -37,9 +37,10 @@ import java.util.Set;
  * 然后剩下的是 怎么把 Thread 和 InternalThreadLocalMap 绑定到一起，InternalThreadLocalMap 这个肯定是不可能线程共享，
  * 否则会有线程安全问题（多个线程公用一个ThreadLocal）
  * 所有就需要构建一个新的Thread(InternalThread)持有一个InternalThreadLocalMap
- * 同时为了兼容jdk原生的Thread，则有一个slow的方法
- *
- * 不过这里似乎有个问题，InternalThread结束后不会清除引用（没有重写Thread的exit），Thread#exit会由jdk自行调用
+ * 同时为了兼容jdk原生的Thread，则有一个slow的方法<br/>
+ * 不过这里似乎有个问题，InternalThread结束后不会清除引用（没有重写Thread的exit），Thread#exit会由jdk自行调用<br/>
+ * 需要留意的一点, {@link java.lang.ThreadLocal.ThreadLocalMap#Entry} 是个WeakReference,会在线程退出后被回收
+ * WeakReference 会被gc扫描，无引用后设置为null
  */
 public class InternalThreadLocal<V> extends ThreadLocal<V> {
 

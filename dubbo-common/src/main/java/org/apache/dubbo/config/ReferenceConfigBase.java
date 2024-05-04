@@ -63,6 +63,7 @@ public abstract class ReferenceConfigBase<T> extends AbstractReferenceConfig {
 
     /**
      * The url for peer-to-peer invocation
+     * 没有指定点对点，并且打开mesh后，这里会进行赋值 triple
      */
     protected String url;
 

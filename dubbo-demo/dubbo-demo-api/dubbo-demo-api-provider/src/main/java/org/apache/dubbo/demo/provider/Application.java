@@ -17,10 +17,7 @@
 package org.apache.dubbo.demo.provider;
 
 import org.apache.dubbo.common.constants.CommonConstants;
-import org.apache.dubbo.config.ApplicationConfig;
-import org.apache.dubbo.config.ProtocolConfig;
-import org.apache.dubbo.config.RegistryConfig;
-import org.apache.dubbo.config.ServiceConfig;
+import org.apache.dubbo.config.*;
 import org.apache.dubbo.config.bootstrap.DubboBootstrap;
 import org.apache.dubbo.demo.DemoService;
 import org.apache.dubbo.demo.GreetingService;
@@ -54,9 +51,12 @@ public class Application {
 //        ProtocolConfig protocolConfig = new ProtocolConfig(CommonConstants.DUBBO, -1);
 //        protocolConfig.setHost("192.168.2.117");
 
+        RegistryConfig registryConfig = new RegistryConfig(REGISTRY_URL);
+        registryConfig.setRegisterMode("interface");
         DubboBootstrap bootstrap = DubboBootstrap.getInstance();
         bootstrap.application(new ApplicationConfig("dubbo-demo-api-provider"))
-            .registry(new RegistryConfig(REGISTRY_URL))
+            .registry(registryConfig)
+            .metadataReport(new MetadataReportConfig("zookeeper://127.0.0.1:2182"))
 //            .protocol(protocolConfig)
             .service(service)
             .service(greet)

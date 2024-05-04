@@ -773,6 +773,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
                     MetadataUtils.publishServiceDefinition(url, providerModel.getServiceModel(), getApplicationModel());
                 }
 
+                // 多个协议绑定同一个端口
                 if (StringUtils.isNotBlank(extProtocol)) {
                     String[] extProtocols = extProtocol.split(",", -1);
                     protocols.addAll(Arrays.asList(extProtocols));

@@ -42,6 +42,7 @@ public class ThreadLocalCache implements Cache {
 
     /**
      * Thread local variable to store cached data.
+     * dubbo内部使用，为什么不使用InternalThreadLocal
      */
     private final ThreadLocal<Map<Object, Object>> store;
 

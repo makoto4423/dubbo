@@ -458,6 +458,7 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
         meshModeHandleUrl(referenceParameters);
 
         if (StringUtils.isNotEmpty(url)) {
+            // 指定url后使用直连
             // user specified URL, could be peer-to-peer address, or register center's address.
             parseUrl(referenceParameters);
         } else {
@@ -535,7 +536,7 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
 
     /**
      * check if mesh config is correct
-     *
+     * 服务网格mesh mode 必须使用 triple 协议(就是必须是http)
      * @param referenceParameters referenceParameters
      * @return mesh config is correct
      */

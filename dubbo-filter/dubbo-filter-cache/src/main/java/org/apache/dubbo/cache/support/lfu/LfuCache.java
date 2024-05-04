@@ -32,6 +32,7 @@ import org.apache.dubbo.common.utils.LFUCache;
  * LfuCache uses url's <b>cache.size</b> value for its max store size, url's <b>cache.evictionFactor</b> value for its eviction factor,
  * default store size value will be 1000, default eviction factor will be 0.3
  * </pre>
+ * least frequency use
  *
  * @see Cache
  * @see LfuCacheFactory

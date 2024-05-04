@@ -76,7 +76,7 @@ public class DubboShutdownHook extends Thread {
             if (logger.isInfoEnabled()) {
                 logger.info("Run shutdown hook now.");
             }
-
+            // 优雅推出
             doDestroy();
         }
     }

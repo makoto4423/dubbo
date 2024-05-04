@@ -24,6 +24,7 @@ package org.apache.dubbo.cache;
  * @see org.apache.dubbo.cache.support.jcache.JCache
  * @see org.apache.dubbo.cache.support.expiring.ExpiringCache
  * @see org.apache.dubbo.cache.support.threadlocal.ThreadLocalCache
+ * 缓存, 都cache，为什么不提供redis
  */
 public interface Cache {
     /**
