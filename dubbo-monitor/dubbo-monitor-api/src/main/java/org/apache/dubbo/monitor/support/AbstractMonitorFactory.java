@@ -42,7 +42,8 @@ import static org.apache.dubbo.common.constants.LoggerCodeConstants.COMMON_MONIT
  * AbstractMonitorFactory. (SPI, Singleton, ThreadSafe)
  */
 public abstract class AbstractMonitorFactory implements MonitorFactory {
-    private static final ErrorTypeAwareLogger logger = LoggerFactory.getErrorTypeAwareLogger(AbstractMonitorFactory.class);
+    private static final ErrorTypeAwareLogger logger =
+            LoggerFactory.getErrorTypeAwareLogger(AbstractMonitorFactory.class);
 
     /**
      * The lock for getting monitor center
@@ -52,14 +53,20 @@ public abstract class AbstractMonitorFactory implements MonitorFactory {
     /**
      * The monitor centers Map<RegistryAddress, Registry>
      */
-    private static final Map<String, Monitor> MONITORS = new ConcurrentHashMap<String, Monitor>();
+    private static final Map<String, Monitor> MONITORS = new ConcurrentHashMap<>();
 
-    private static final Map<String, Future<Monitor>> FUTURES = new ConcurrentHashMap<String, Future<Monitor>>();
+    private static final Map<String, Future<Monitor>> FUTURES = new ConcurrentHashMap<>();
 
     /**
      * The monitor create executor
      */
-    private static final ExecutorService EXECUTOR = new ThreadPoolExecutor(0, 10, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), new NamedThreadFactory("DubboMonitorCreator", true));
+    private static final ExecutorService EXECUTOR = new ThreadPoolExecutor(
+            0,
+            10,
+            60L,
+            TimeUnit.SECONDS,
+            new SynchronousQueue<Runnable>(),
+            new NamedThreadFactory("DubboMonitorCreator", true));
 
     public static Collection<Monitor> getMonitors() {
         return Collections.unmodifiableCollection(MONITORS.values());
@@ -91,7 +98,13 @@ public abstract class AbstractMonitorFactory implements MonitorFactory {
                     FUTURES.remove(key);
                     return m;
                 } catch (Throwable e) {
-                    logger.warn(COMMON_MONITOR_EXCEPTION, "", "", "Create monitor failed, monitor data will not be collected until you fix this problem. monitorUrl: " + monitorUrl, e);
+                    logger.warn(
+                            COMMON_MONITOR_EXCEPTION,
+                            "",
+                            "",
+                            "Create monitor failed, monitor data will not be collected until you fix this problem. monitorUrl: "
+                                    + monitorUrl,
+                            e);
                     return null;
                 }
             });
@@ -104,5 +117,4 @@ public abstract class AbstractMonitorFactory implements MonitorFactory {
     }
 
     protected abstract Monitor createMonitor(URL url);
-
 }

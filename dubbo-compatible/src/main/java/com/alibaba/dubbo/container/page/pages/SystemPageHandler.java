@@ -19,17 +19,17 @@ package com.alibaba.dubbo.container.page.pages;
 import org.apache.dubbo.common.Version;
 import org.apache.dubbo.common.utils.NetUtils;
 
-import com.alibaba.dubbo.common.URL;
-import com.alibaba.dubbo.container.page.Menu;
-import com.alibaba.dubbo.container.page.Page;
-import com.alibaba.dubbo.container.page.PageHandler;
-
 import java.lang.management.ManagementFactory;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+
+import com.alibaba.dubbo.common.URL;
+import com.alibaba.dubbo.container.page.Menu;
+import com.alibaba.dubbo.container.page.Page;
+import com.alibaba.dubbo.container.page.PageHandler;
 
 /**
  * SystemPageHandler
@@ -44,52 +44,54 @@ public class SystemPageHandler implements PageHandler {
 
     @Override
     public Page handle(URL url) {
-        List<List<String>> rows = new ArrayList<List<String>>();
+        List<List<String>> rows = new ArrayList<>();
         List<String> row;
 
-        row = new ArrayList<String>();
+        row = new ArrayList<>();
         row.add("Version");
         row.add(Version.getVersion(SystemPageHandler.class, "2.0.0"));
         rows.add(row);
 
-        row = new ArrayList<String>();
+        row = new ArrayList<>();
         row.add("Host");
         String address = NetUtils.getLocalHost();
         row.add(NetUtils.getHostName(address) + "/" + address);
         rows.add(row);
 
-        row = new ArrayList<String>();
+        row = new ArrayList<>();
         row.add("OS");
         row.add(System.getProperty("os.name") + " " + System.getProperty("os.version"));
         rows.add(row);
 
-        row = new ArrayList<String>();
+        row = new ArrayList<>();
         row.add("JVM");
-        row.add(System.getProperty("java.runtime.name") + " " + System.getProperty("java.runtime.version") + ",<br/>" + System.getProperty("java.vm.name") + " " + System.getProperty("java.vm.version") + " " + System.getProperty("java.vm.info", ""));
+        row.add(System.getProperty("java.runtime.name") + " " + System.getProperty("java.runtime.version") + ",<br/>"
+                + System.getProperty("java.vm.name") + " " + System.getProperty("java.vm.version") + " "
+                + System.getProperty("java.vm.info", ""));
         rows.add(row);
 
-        row = new ArrayList<String>();
+        row = new ArrayList<>();
         row.add("CPU");
-        row.add(System.getProperty("os.arch", "") + ", " + String.valueOf(Runtime.getRuntime().availableProcessors()) + " cores");
+        row.add(System.getProperty("os.arch", "") + ", "
+                + String.valueOf(Runtime.getRuntime().availableProcessors()) + " cores");
         rows.add(row);
 
-        row = new ArrayList<String>();
+        row = new ArrayList<>();
         row.add("Locale");
         row.add(Locale.getDefault().toString() + "/" + System.getProperty("file.encoding"));
         rows.add(row);
 
-        row = new ArrayList<String>();
+        row = new ArrayList<>();
         row.add("Uptime");
         row.add(formatUptime(ManagementFactory.getRuntimeMXBean().getUptime()));
         rows.add(row);
 
-        row = new ArrayList<String>();
+        row = new ArrayList<>();
         row.add("Time");
         row.add(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS Z").format(new Date()));
         rows.add(row);
 
-        return new Page("System", "System", new String[]{
-                "Property", "Value"}, rows);
+        return new Page("System", "System", new String[] {"Property", "Value"}, rows);
     }
 
     private String formatUptime(long uptime) {

@@ -30,7 +30,7 @@ public class ReplierDispatcher implements Replier<Object> {
 
     private final Replier<?> defaultReplier;
 
-    private final Map<Class<?>, Replier<?>> repliers = new ConcurrentHashMap<Class<?>, Replier<?>>();
+    private final Map<Class<?>, Replier<?>> repliers = new ConcurrentHashMap<>();
 
     public ReplierDispatcher() {
         this(null, null);
@@ -74,5 +74,4 @@ public class ReplierDispatcher implements Replier<Object> {
     public Object reply(ExchangeChannel channel, Object request) throws RemotingException {
         return ((Replier) getReplier(request.getClass())).reply(channel, request);
     }
-
 }

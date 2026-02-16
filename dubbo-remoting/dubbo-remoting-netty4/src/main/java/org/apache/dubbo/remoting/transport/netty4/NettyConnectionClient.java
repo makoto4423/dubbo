@@ -31,6 +31,11 @@ import org.apache.dubbo.remoting.transport.netty4.ssl.SslClientTlsHandler;
 import org.apache.dubbo.remoting.transport.netty4.ssl.SslContexts;
 import org.apache.dubbo.remoting.utils.UrlUtils;
 
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelFuture;
@@ -38,7 +43,6 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoop;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -46,10 +50,6 @@ import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import io.netty.util.concurrent.Promise;
-
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.apache.dubbo.common.constants.LoggerCodeConstants.TRANSPORT_CLIENT_CONNECT_TIMEOUT;
@@ -59,7 +59,8 @@ import static org.apache.dubbo.remoting.transport.netty4.NettyEventLoopFactory.s
 
 public class NettyConnectionClient extends AbstractConnectionClient {
 
-    private static final ErrorTypeAwareLogger LOGGER = LoggerFactory.getErrorTypeAwareLogger(NettyConnectionClient.class);
+    private static final ErrorTypeAwareLogger LOGGER =
+            LoggerFactory.getErrorTypeAwareLogger(NettyConnectionClient.class);
 
     private AtomicReference<Promise<Object>> connectingPromise;
 
@@ -73,6 +74,7 @@ public class NettyConnectionClient extends AbstractConnectionClient {
 
     public static final AttributeKey<AbstractConnectionClient> CONNECTION = AttributeKey.valueOf("connection");
 
+    private AtomicBoolean isReconnecting;
 
     public NettyConnectionClient(URL url, ChannelHandler handler) throws RemotingException {
         super(url, handler);
@@ -80,7 +82,9 @@ public class NettyConnectionClient extends AbstractConnectionClient {
 
     @Override
     protected void initConnectionClient() {
-        this.protocol = getUrl().getOrDefaultFrameworkModel().getExtensionLoader(WireProtocol.class).getExtension(getUrl().getProtocol());
+        this.protocol = getUrl().getOrDefaultFrameworkModel()
+                .getExtensionLoader(WireProtocol.class)
+                .getExtension(getUrl().getProtocol());
         this.remote = getConnectAddress();
         this.connectingPromise = new AtomicReference<>();
         this.connectionListener = new ConnectionListener();
@@ -88,6 +92,7 @@ public class NettyConnectionClient extends AbstractConnectionClient {
         this.closePromise = new DefaultPromise<>(GlobalEventExecutor.INSTANCE);
         this.init = new AtomicBoolean(false);
         this.increase();
+        this.isReconnecting = new AtomicBoolean(false);
     }
 
     @Override
@@ -98,7 +103,8 @@ public class NettyConnectionClient extends AbstractConnectionClient {
 
     private void initBootstrap() {
         final Bootstrap nettyBootstrap = new Bootstrap();
-        nettyBootstrap.group(NettyEventLoopFactory.NIO_EVENT_LOOP_GROUP.get())
+        nettyBootstrap
+                .group(NettyEventLoopFactory.NIO_EVENT_LOOP_GROUP.get())
                 .option(ChannelOption.SO_KEEPALIVE, true)
                 .option(ChannelOption.TCP_NODELAY, true)
                 .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
@@ -107,7 +113,6 @@ public class NettyConnectionClient extends AbstractConnectionClient {
 
         final NettyConnectionHandler connectionHandler = new NettyConnectionHandler(this);
         nettyBootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, getConnectTimeout());
-        SslContext sslContext = SslContexts.buildClientSslContext(getUrl());
         nettyBootstrap.handler(new ChannelInitializer<SocketChannel>() {
             @Override
             protected void initChannel(SocketChannel ch) {
@@ -115,11 +120,12 @@ public class NettyConnectionClient extends AbstractConnectionClient {
                 final ChannelPipeline pipeline = ch.pipeline();
                 NettySslContextOperator nettySslContextOperator = new NettySslContextOperator();
 
+                SslContext sslContext = SslContexts.buildClientSslContext(getUrl());
                 if (sslContext != null) {
                     pipeline.addLast("negotiation", new SslClientTlsHandler(sslContext));
                 }
 
-//                pipeline.addLast("logging", new LoggingHandler(LogLevel.INFO)); //for debug
+                //                pipeline.addLast("logging", new LoggingHandler(LogLevel.INFO)); //for debug
 
                 int heartbeat = UrlUtils.getHeartbeat(getUrl());
                 pipeline.addLast("client-idle-handler", new IdleStateHandler(heartbeat, 0, 0, MILLISECONDS));
@@ -128,7 +134,8 @@ public class NettyConnectionClient extends AbstractConnectionClient {
 
                 NettyConfigOperator operator = new NettyConfigOperator(nettyChannel, getChannelHandler());
                 protocol.configClientPipeline(getUrl(), operator, nettySslContextOperator);
-                ch.closeFuture().addListener(channelFuture -> doClose());
+                // set null but do not close this client, it will be reconnect in the future
+                ch.closeFuture().addListener(channelFuture -> channel.set(null));
                 // TODO support Socks5
             }
         });
@@ -153,10 +160,14 @@ public class NettyConnectionClient extends AbstractConnectionClient {
 
     @Override
     protected void doConnect() throws RemotingException {
+        if (!isReconnecting.compareAndSet(false, true)) {
+            return;
+        }
+
         if (isClosed()) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("%s aborted to reconnect cause connection closed. ",
-                        NettyConnectionClient.this));
+                LOGGER.debug(
+                        String.format("%s aborted to reconnect cause connection closed. ", NettyConnectionClient.this));
             }
         }
         init.compareAndSet(false, true);
@@ -176,22 +187,32 @@ public class NettyConnectionClient extends AbstractConnectionClient {
             Throwable cause = promise.cause();
 
             // 6-1 Failed to connect to provider server by other reason.
-            RemotingException remotingException = new RemotingException(this, "client(url: " + getUrl() + ") failed to connect to server "
-                    + getConnectAddress() + ", error message is:" + cause.getMessage(), cause);
+            RemotingException remotingException = new RemotingException(
+                    this,
+                    "client(url: " + getUrl() + ") failed to connect to server " + getConnectAddress()
+                            + ", error message is:" + cause.getMessage(),
+                    cause);
 
-            LOGGER.error(TRANSPORT_FAILED_CONNECT_PROVIDER, "network disconnected", "",
-                    "Failed to connect to provider server by other reason.", cause);
+            LOGGER.error(
+                    TRANSPORT_FAILED_CONNECT_PROVIDER,
+                    "network disconnected",
+                    "",
+                    "Failed to connect to provider server by other reason.",
+                    cause);
 
             throw remotingException;
         } else if (!ret || !promise.isSuccess()) {
             // 6-2 Client-side timeout
-            RemotingException remotingException = new RemotingException(this, "client(url: " + getUrl() + ") failed to connect to server "
-                    + getConnectAddress() + " client-side timeout "
-                    + getConnectTimeout() + "ms (elapsed: " + (System.currentTimeMillis() - start) + "ms) from netty client "
-                    + NetUtils.getLocalHost() + " using dubbo version " + Version.getVersion());
+            RemotingException remotingException = new RemotingException(
+                    this,
+                    "client(url: " + getUrl() + ") failed to connect to server "
+                            + getConnectAddress() + " client-side timeout "
+                            + getConnectTimeout() + "ms (elapsed: " + (System.currentTimeMillis() - start)
+                            + "ms) from netty client "
+                            + NetUtils.getLocalHost() + " using dubbo version " + Version.getVersion());
 
-            LOGGER.error(TRANSPORT_CLIENT_CONNECT_TIMEOUT, "provider crash", "",
-                    "Client-side timeout.", remotingException);
+            LOGGER.error(
+                    TRANSPORT_CLIENT_CONNECT_TIMEOUT, "provider crash", "", "Client-side timeout.", remotingException);
 
             throw remotingException;
         }
@@ -215,6 +236,13 @@ public class NettyConnectionClient extends AbstractConnectionClient {
             }
             return;
         }
+
+        // Close the existing channel before setting a new channel
+        final io.netty.channel.Channel current = getNettyChannel();
+        if (current != null) {
+            current.close();
+        }
+
         this.channel.set(nettyChannel);
         // This indicates that the connection is available.
         if (this.connectingPromise.get() != null) {
@@ -233,6 +261,10 @@ public class NettyConnectionClient extends AbstractConnectionClient {
         }
         io.netty.channel.Channel nettyChannel = (io.netty.channel.Channel) channel;
         if (this.channel.compareAndSet(nettyChannel, null)) {
+            // Ensure the channel is closed
+            if (nettyChannel.isOpen()) {
+                nettyChannel.close();
+            }
             NettyChannel.removeChannelIfDisconnected(nettyChannel);
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(String.format("%s goaway", this));
@@ -285,7 +317,6 @@ public class NettyConnectionClient extends AbstractConnectionClient {
 
         nettyChannel = getNettyChannel();
         return nettyChannel != null && nettyChannel.isActive();
-
     }
 
     @Override
@@ -303,9 +334,10 @@ public class NettyConnectionClient extends AbstractConnectionClient {
 
     public ChannelFuture write(Object request) throws RemotingException {
         if (!isAvailable()) {
-            throw new RemotingException(null, null,
-                    "Failed to send request " + request + ", cause: The channel to " + remote
-                            + " is closed!");
+            throw new RemotingException(
+                    null,
+                    null,
+                    "Failed to send request " + request + ", cause: The channel to " + remote + " is closed!");
         }
         return ((io.netty.channel.Channel) getChannel()).writeAndFlush(request);
     }
@@ -322,37 +354,53 @@ public class NettyConnectionClient extends AbstractConnectionClient {
 
     @Override
     public String toString() {
-        return super.toString() + " (Ref=" + this.getCounter() + ",local=" +
-                (getChannel() == null ? null : getChannel().getLocalAddress()) + ",remote=" + getRemoteAddress();
+        return super.toString() + " (Ref=" + this.getCounter() + ",local="
+                + Optional.ofNullable(getChannel())
+                        .map(Channel::getLocalAddress)
+                        .orElse(null) + ",remote=" + getRemoteAddress();
     }
 
     class ConnectionListener implements ChannelFutureListener {
 
         @Override
         public void operationComplete(ChannelFuture future) {
+
+            if (!isReconnecting.compareAndSet(true, false)) {
+                return;
+            }
+
             if (future.isSuccess()) {
                 return;
             }
             final NettyConnectionClient connectionClient = NettyConnectionClient.this;
             if (connectionClient.isClosed() || connectionClient.getCounter() == 0) {
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug(String.format("%s aborted to reconnect. %s", connectionClient,
-                            future.cause().getMessage()));
+                    LOGGER.debug(String.format(
+                            "%s aborted to reconnect. %s",
+                            connectionClient, future.cause().getMessage()));
                 }
                 return;
             }
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("%s is reconnecting, attempt=%d cause=%s", connectionClient, 0,
-                        future.cause().getMessage()));
+                LOGGER.debug(String.format(
+                        "%s is reconnecting, attempt=%d cause=%s",
+                        connectionClient, 0, future.cause().getMessage()));
             }
-            final EventLoop loop = future.channel().eventLoop();
-            loop.schedule(() -> {
-                try {
-                    connectionClient.doConnect();
-                } catch (RemotingException e) {
-                    LOGGER.error(TRANSPORT_FAILED_RECONNECT, "", "", "Failed to connect to server: " + getConnectAddress());
-                }
-            }, 1L, TimeUnit.SECONDS);
+
+            connectivityExecutor.schedule(
+                    () -> {
+                        try {
+                            connectionClient.doConnect();
+                        } catch (RemotingException e) {
+                            LOGGER.error(
+                                    TRANSPORT_FAILED_RECONNECT,
+                                    "",
+                                    "",
+                                    "Failed to connect to server: " + getConnectAddress());
+                        }
+                    },
+                    reconnectDuaration,
+                    TimeUnit.MILLISECONDS);
         }
     }
 }

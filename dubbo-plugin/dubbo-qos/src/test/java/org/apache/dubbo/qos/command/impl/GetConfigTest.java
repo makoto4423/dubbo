@@ -40,14 +40,16 @@ import org.junit.jupiter.api.Test;
 
 class GetConfigTest {
     @Test
-    void testAll(){
+    void testAll() {
         FrameworkModel frameworkModel = new FrameworkModel();
         ApplicationModel applicationModel1 = frameworkModel.newApplication();
 
         applicationModel1.getApplicationConfigManager().setApplication(new ApplicationConfig("app1"));
         applicationModel1.getApplicationConfigManager().addProtocol(new ProtocolConfig("dubbo", 12345));
         applicationModel1.getApplicationConfigManager().addRegistry(new RegistryConfig("zookeeper://127.0.0.1:2181"));
-        applicationModel1.getApplicationConfigManager().addMetadataReport(new MetadataReportConfig("zookeeper://127.0.0.1:2181"));
+        applicationModel1
+                .getApplicationConfigManager()
+                .addMetadataReport(new MetadataReportConfig("zookeeper://127.0.0.1:2181"));
         ConfigCenterConfig configCenterConfig = new ConfigCenterConfig();
         configCenterConfig.setAddress("zookeeper://127.0.0.1:2181");
         applicationModel1.getApplicationConfigManager().addConfigCenter(configCenterConfig);
@@ -73,47 +75,34 @@ class GetConfigTest {
     }
 
     @Test
-    void testFilter1(){
+    void testEmptyId() {
         FrameworkModel frameworkModel = new FrameworkModel();
         ApplicationModel applicationModel1 = frameworkModel.newApplication();
 
         applicationModel1.getApplicationConfigManager().setApplication(new ApplicationConfig("app1"));
-        applicationModel1.getApplicationConfigManager().addProtocol(new ProtocolConfig("dubbo", 12345));
-        applicationModel1.getApplicationConfigManager().addRegistry(new RegistryConfig("zookeeper://127.0.0.1:2181"));
-        applicationModel1.getApplicationConfigManager().addMetadataReport(new MetadataReportConfig("zookeeper://127.0.0.1:2181"));
-        ConfigCenterConfig configCenterConfig = new ConfigCenterConfig();
-        configCenterConfig.setAddress("zookeeper://127.0.0.1:2181");
-        applicationModel1.getApplicationConfigManager().addConfigCenter(configCenterConfig);
-        applicationModel1.getApplicationConfigManager().setMetrics(new MetricsConfig());
-        applicationModel1.getApplicationConfigManager().setMonitor(new MonitorConfig());
-        applicationModel1.getApplicationConfigManager().setSsl(new SslConfig());
 
         ModuleModel moduleModel = applicationModel1.newModule();
-        moduleModel.getConfigManager().setModule(new ModuleConfig());
-        moduleModel.getConfigManager().addConsumer(new ConsumerConfig());
-        moduleModel.getConfigManager().addProvider(new ProviderConfig());
-        ReferenceConfig<Object> referenceConfig = new ReferenceConfig<>();
-        referenceConfig.setInterface(MetadataService.class);
-        moduleModel.getConfigManager().addReference(referenceConfig);
-        ServiceConfig<Object> serviceConfig = new ServiceConfig<>();
-        serviceConfig.setInterface(MetadataService.class);
-        moduleModel.getConfigManager().addService(serviceConfig);
+        ProviderConfig providerConfig1 = new ProviderConfig();
+        providerConfig1.setThreadname("test");
+        moduleModel.getConfigManager().addProvider(providerConfig1);
 
         CommandContext commandContext = new CommandContext("getConfig");
         commandContext.setHttp(true);
 
-        Assertions.assertNotNull(new GetConfig(frameworkModel).execute(commandContext, new String[]{"ApplicationConfig"}));
+        Assertions.assertNotNull(new GetConfig(frameworkModel).execute(commandContext, null));
     }
 
     @Test
-    void testFilter2(){
+    void testFilter1() {
         FrameworkModel frameworkModel = new FrameworkModel();
         ApplicationModel applicationModel1 = frameworkModel.newApplication();
 
         applicationModel1.getApplicationConfigManager().setApplication(new ApplicationConfig("app1"));
         applicationModel1.getApplicationConfigManager().addProtocol(new ProtocolConfig("dubbo", 12345));
         applicationModel1.getApplicationConfigManager().addRegistry(new RegistryConfig("zookeeper://127.0.0.1:2181"));
-        applicationModel1.getApplicationConfigManager().addMetadataReport(new MetadataReportConfig("zookeeper://127.0.0.1:2181"));
+        applicationModel1
+                .getApplicationConfigManager()
+                .addMetadataReport(new MetadataReportConfig("zookeeper://127.0.0.1:2181"));
         ConfigCenterConfig configCenterConfig = new ConfigCenterConfig();
         configCenterConfig.setAddress("zookeeper://127.0.0.1:2181");
         applicationModel1.getApplicationConfigManager().addConfigCenter(configCenterConfig);
@@ -135,6 +124,43 @@ class GetConfigTest {
         CommandContext commandContext = new CommandContext("getConfig");
         commandContext.setHttp(true);
 
-        Assertions.assertNotNull(new GetConfig(frameworkModel).execute(commandContext, new String[]{"ProtocolConfig", "dubbo"}));
+        Assertions.assertNotNull(
+                new GetConfig(frameworkModel).execute(commandContext, new String[] {"ApplicationConfig"}));
+    }
+
+    @Test
+    void testFilter2() {
+        FrameworkModel frameworkModel = new FrameworkModel();
+        ApplicationModel applicationModel1 = frameworkModel.newApplication();
+
+        applicationModel1.getApplicationConfigManager().setApplication(new ApplicationConfig("app1"));
+        applicationModel1.getApplicationConfigManager().addProtocol(new ProtocolConfig("dubbo", 12345));
+        applicationModel1.getApplicationConfigManager().addRegistry(new RegistryConfig("zookeeper://127.0.0.1:2181"));
+        applicationModel1
+                .getApplicationConfigManager()
+                .addMetadataReport(new MetadataReportConfig("zookeeper://127.0.0.1:2181"));
+        ConfigCenterConfig configCenterConfig = new ConfigCenterConfig();
+        configCenterConfig.setAddress("zookeeper://127.0.0.1:2181");
+        applicationModel1.getApplicationConfigManager().addConfigCenter(configCenterConfig);
+        applicationModel1.getApplicationConfigManager().setMetrics(new MetricsConfig());
+        applicationModel1.getApplicationConfigManager().setMonitor(new MonitorConfig());
+        applicationModel1.getApplicationConfigManager().setSsl(new SslConfig());
+
+        ModuleModel moduleModel = applicationModel1.newModule();
+        moduleModel.getConfigManager().setModule(new ModuleConfig());
+        moduleModel.getConfigManager().addConsumer(new ConsumerConfig());
+        moduleModel.getConfigManager().addProvider(new ProviderConfig());
+        ReferenceConfig<Object> referenceConfig = new ReferenceConfig<>();
+        referenceConfig.setInterface(MetadataService.class);
+        moduleModel.getConfigManager().addReference(referenceConfig);
+        ServiceConfig<Object> serviceConfig = new ServiceConfig<>();
+        serviceConfig.setInterface(MetadataService.class);
+        moduleModel.getConfigManager().addService(serviceConfig);
+
+        CommandContext commandContext = new CommandContext("getConfig");
+        commandContext.setHttp(true);
+
+        Assertions.assertNotNull(
+                new GetConfig(frameworkModel).execute(commandContext, new String[] {"ProtocolConfig", "dubbo"}));
     }
 }

@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.dubbo.rpc;
 
 public interface Constants {
@@ -103,6 +102,7 @@ public interface Constants {
     String H2_SETTINGS_ENABLE_PUSH_KEY = "dubbo.rpc.tri.enable-push";
     String H2_SETTINGS_MAX_CONCURRENT_STREAMS_KEY = "dubbo.rpc.tri.max-concurrent-streams";
     String H2_SETTINGS_INITIAL_WINDOW_SIZE_KEY = "dubbo.rpc.tri.initial-window-size";
+    String H2_SETTINGS_CONNECTION_INITIAL_WINDOW_SIZE_KEY = "dubbo.rpc.tri.connection-initial-window-size";
     String H2_SETTINGS_MAX_FRAME_SIZE_KEY = "dubbo.rpc.tri.max-frame-size";
     String H2_SETTINGS_MAX_HEADER_LIST_SIZE_KEY = "dubbo.rpc.tri.max-header-list-size";
 

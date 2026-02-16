@@ -43,5 +43,4 @@ public interface Invoker<T> extends Node {
      * @throws RpcException
      */
     Result invoke(Invocation invocation) throws RpcException;
-
 }

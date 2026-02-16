@@ -14,12 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.dubbo.rpc.protocol.tri.stream;
 
 import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.common.logger.ErrorTypeAwareLogger;
 import org.apache.dubbo.common.logger.LoggerFactory;
+import org.apache.dubbo.remoting.Constants;
 import org.apache.dubbo.rpc.TriRpcStatus;
 import org.apache.dubbo.rpc.model.FrameworkModel;
 import org.apache.dubbo.rpc.protocol.tri.ClassLoadUtil;
@@ -41,6 +41,16 @@ import org.apache.dubbo.rpc.protocol.tri.transport.TripleHttp2ClientResponseHand
 import org.apache.dubbo.rpc.protocol.tri.transport.TripleWriteQueue;
 import org.apache.dubbo.rpc.protocol.tri.transport.WriteQueue;
 
+import javax.net.ssl.SSLSession;
+
+import java.io.IOException;
+import java.net.SocketAddress;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executor;
+
 import com.google.protobuf.Any;
 import com.google.rpc.DebugInfo;
 import com.google.rpc.ErrorInfo;
@@ -54,18 +64,10 @@ import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2StreamChannel;
 import io.netty.handler.codec.http2.Http2StreamChannelBootstrap;
+import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
 
-import java.io.IOException;
-import java.net.SocketAddress;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Executor;
-
 import static org.apache.dubbo.common.constants.LoggerCodeConstants.PROTOCOL_FAILED_RESPONSE;
-
 
 /**
  * ClientStream is an abstraction for bi-directional messaging. It maintains a {@link WriteQueue} to
@@ -75,6 +77,7 @@ import static org.apache.dubbo.common.constants.LoggerCodeConstants.PROTOCOL_FAI
 public class TripleClientStream extends AbstractStream implements ClientStream {
 
     private static final ErrorTypeAwareLogger LOGGER = LoggerFactory.getErrorTypeAwareLogger(TripleClientStream.class);
+    private static final AttributeKey<SSLSession> SSL_SESSION_KEY = AttributeKey.valueOf(Constants.SSL_SESSION_KEY);
 
     public final ClientStream.Listener listener;
     private final TripleWriteQueue writeQueue;
@@ -87,11 +90,12 @@ public class TripleClientStream extends AbstractStream implements ClientStream {
     private boolean isReturnTriException = false;
 
     // for test
-    TripleClientStream(FrameworkModel frameworkModel,
-                       Executor executor,
-                       TripleWriteQueue writeQueue,
-                       ClientStream.Listener listener,
-        Http2StreamChannel http2StreamChannel) {
+    TripleClientStream(
+            FrameworkModel frameworkModel,
+            Executor executor,
+            TripleWriteQueue writeQueue,
+            ClientStream.Listener listener,
+            Http2StreamChannel http2StreamChannel) {
         super(executor, frameworkModel);
         this.parent = http2StreamChannel.parent();
         this.listener = listener;
@@ -99,11 +103,12 @@ public class TripleClientStream extends AbstractStream implements ClientStream {
         this.streamChannelFuture = initHttp2StreamChannel(http2StreamChannel);
     }
 
-    public TripleClientStream(FrameworkModel frameworkModel,
-                              Executor executor,
-                              Channel parent,
-                              ClientStream.Listener listener,
-        TripleWriteQueue writeQueue) {
+    public TripleClientStream(
+            FrameworkModel frameworkModel,
+            Executor executor,
+            Channel parent,
+            ClientStream.Listener listener,
+            TripleWriteQueue writeQueue) {
         super(executor, frameworkModel);
         this.parent = parent;
         this.listener = listener;
@@ -115,18 +120,17 @@ public class TripleClientStream extends AbstractStream implements ClientStream {
         TripleStreamChannelFuture streamChannelFuture = new TripleStreamChannelFuture(parent);
         Http2StreamChannelBootstrap bootstrap = new Http2StreamChannelBootstrap(parent);
         bootstrap.handler(new ChannelInboundHandlerAdapter() {
-                @Override
-                public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-                    Channel channel = ctx.channel();
-                    channel.pipeline().addLast(new TripleCommandOutBoundHandler());
-                    channel.pipeline().addLast(new TripleHttp2ClientResponseHandler(createTransportListener()));
-                }
-            });
+            @Override
+            public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+                Channel channel = ctx.channel();
+                channel.pipeline().addLast(new TripleCommandOutBoundHandler());
+                channel.pipeline().addLast(new TripleHttp2ClientResponseHandler(createTransportListener()));
+            }
+        });
         CreateStreamQueueCommand cmd = CreateStreamQueueCommand.create(bootstrap, streamChannelFuture);
         this.writeQueue.enqueue(cmd);
         return streamChannelFuture;
     }
-
 
     public ChannelFuture sendHeader(Http2Headers headers) {
         if (this.writeQueue == null) {
@@ -146,8 +150,8 @@ public class TripleClientStream extends AbstractStream implements ClientStream {
     }
 
     private void transportException(Throwable cause) {
-        final TriRpcStatus status = TriRpcStatus.INTERNAL.withDescription("Http2 exception")
-            .withCause(cause);
+        final TriRpcStatus status =
+                TriRpcStatus.INTERNAL.withDescription("Http2 exception").withCause(cause);
         listener.onComplete(status, null, null, false);
     }
 
@@ -167,6 +171,10 @@ public class TripleClientStream extends AbstractStream implements ClientStream {
         return parent.remoteAddress();
     }
 
+    @Override
+    public SSLSession getSslSession() {
+        return parent.attr(SSL_SESSION_KEY).get();
+    }
 
     @Override
     public ChannelFuture sendMessage(byte[] message, int compressFlag, boolean eos) {
@@ -174,18 +182,15 @@ public class TripleClientStream extends AbstractStream implements ClientStream {
         if (!checkResult.isSuccess()) {
             return checkResult;
         }
-        final DataQueueCommand cmd = DataQueueCommand.create(streamChannelFuture, message, false,
-            compressFlag);
+        final DataQueueCommand cmd = DataQueueCommand.create(streamChannelFuture, message, false, compressFlag);
         return this.writeQueue.enqueueFuture(cmd, parent.eventLoop()).addListener(future -> {
-                    if (!future.isSuccess()) {
-                        cancelByLocal(
-                            TriRpcStatus.INTERNAL.withDescription("Client write message failed")
-                                .withCause(future.cause())
-                        );
-                        transportException(future.cause());
-                    }
-                }
-            );
+            if (!future.isSuccess()) {
+                cancelByLocal(TriRpcStatus.INTERNAL
+                        .withDescription("Client write message failed")
+                        .withCause(future.cause()));
+                transportException(future.cause());
+            }
+        });
     }
 
     @Override
@@ -221,8 +226,7 @@ public class TripleClientStream extends AbstractStream implements ClientStream {
         return new ClientTransportListener();
     }
 
-    class ClientTransportListener extends AbstractH2TransportListener implements
-        H2TransportListener {
+    class ClientTransportListener extends AbstractH2TransportListener implements H2TransportListener {
 
         private TriRpcStatus transportError;
         private DeCompressor decompressor;
@@ -237,7 +241,8 @@ public class TripleClientStream extends AbstractStream implements ClientStream {
 
         void finishProcess(TriRpcStatus status, Http2Headers trailers, boolean isReturnTriException) {
             final Map<String, String> reserved = filterReservedHeaders(trailers);
-            final Map<String, Object> attachments = headersToMap(trailers, () -> reserved.get(TripleHeaderEnum.TRI_HEADER_CONVERT.getHeader()));
+            final Map<String, Object> attachments =
+                    headersToMap(trailers, () -> reserved.get(TripleHeaderEnum.TRI_HEADER_CONVERT.getHeader()));
             final TriRpcStatus detailStatus;
             final TriRpcStatus statusFromTrailers = getStatusFromTrailers(reserved);
             if (statusFromTrailers != null) {
@@ -249,17 +254,17 @@ public class TripleClientStream extends AbstractStream implements ClientStream {
         }
 
         private TriRpcStatus validateHeaderStatus(Http2Headers headers) {
-            Integer httpStatus =
-                headers.status() == null ? null : Integer.parseInt(headers.status().toString());
+            Integer httpStatus = headers.status() == null
+                    ? null
+                    : Integer.parseInt(headers.status().toString());
             if (httpStatus == null) {
                 return TriRpcStatus.INTERNAL.withDescription("Missing HTTP status code");
             }
-            final CharSequence contentType = headers.get(
-                TripleHeaderEnum.CONTENT_TYPE_KEY.getHeader());
-            if (contentType == null || !contentType.toString()
-                .startsWith(TripleHeaderEnum.APPLICATION_GRPC.getHeader())) {
+            final CharSequence contentType = headers.get(TripleHeaderEnum.CONTENT_TYPE_KEY.getHeader());
+            if (contentType == null
+                    || !contentType.toString().startsWith(TripleHeaderEnum.APPLICATION_GRPC.getHeader())) {
                 return TriRpcStatus.fromCode(TriRpcStatus.httpStatusToGrpcCode(httpStatus))
-                    .withDescription("invalid content-type: " + contentType);
+                        .withDescription("invalid content-type: " + contentType);
             }
             return null;
         }
@@ -273,11 +278,11 @@ public class TripleClientStream extends AbstractStream implements ClientStream {
                 transportError = TriRpcStatus.INTERNAL.withDescription("Received headers twice");
                 return;
             }
-            Integer httpStatus =
-                headers.status() == null ? null : Integer.parseInt(headers.status().toString());
+            Integer httpStatus = headers.status() == null
+                    ? null
+                    : Integer.parseInt(headers.status().toString());
 
-            if (httpStatus != null && Integer.parseInt(httpStatus.toString()) > 100
-                && httpStatus < 200) {
+            if (httpStatus != null && Integer.parseInt(httpStatus.toString()) > 100 && httpStatus < 200) {
                 // ignored
                 return;
             }
@@ -296,12 +301,11 @@ public class TripleClientStream extends AbstractStream implements ClientStream {
             if (null != messageEncoding) {
                 String compressorStr = messageEncoding.toString();
                 if (!Identity.IDENTITY.getMessageEncoding().equals(compressorStr)) {
-                    DeCompressor compressor = DeCompressor.getCompressor(frameworkModel,
-                        compressorStr);
+                    DeCompressor compressor = DeCompressor.getCompressor(frameworkModel, compressorStr);
                     if (null == compressor) {
-                        throw TriRpcStatus.UNIMPLEMENTED.withDescription(String.format(
-                            "Grpc-encoding '%s' is not supported",
-                            compressorStr)).asException();
+                        throw TriRpcStatus.UNIMPLEMENTED
+                                .withDescription(String.format("Grpc-encoding '%s' is not supported", compressorStr))
+                                .asException();
                     } else {
                         decompressor = compressor;
                     }
@@ -357,23 +361,22 @@ public class TripleClientStream extends AbstractStream implements ClientStream {
             if (headerReceived) {
                 return TriRpcStatus.UNKNOWN.withDescription("missing GRPC status in response");
             }
-            Integer httpStatus =
-                trailers.status() == null ? null : Integer.parseInt(trailers.status().toString());
+            Integer httpStatus = trailers.status() == null
+                    ? null
+                    : Integer.parseInt(trailers.status().toString());
             if (httpStatus != null) {
                 status = TriRpcStatus.fromCode(TriRpcStatus.httpStatusToGrpcCode(httpStatus));
             } else {
                 status = TriRpcStatus.INTERNAL.withDescription("missing HTTP status code");
             }
-            return status.appendDescription(
-                "missing GRPC status, inferred error from HTTP status code");
+            return status.appendDescription("missing GRPC status, inferred error from HTTP status code");
         }
-
 
         private TriRpcStatus getStatusFromTrailers(Map<String, String> metadata) {
             if (null == metadata) {
                 return null;
             }
-            if (!getGrpcStatusDetailEnabled()){
+            if (!getGrpcStatusDetailEnabled()) {
                 return null;
             }
             // second get status detail
@@ -390,11 +393,10 @@ public class TripleClientStream extends AbstractStream implements ClientStream {
 
                 // get common exception from DebugInfo
                 TriRpcStatus status = TriRpcStatus.fromCode(statusDetail.getCode())
-                    .withDescription(TriRpcStatus.decodeMessage(statusDetail.getMessage()));
+                        .withDescription(TriRpcStatus.decodeMessage(statusDetail.getMessage()));
                 DebugInfo debugInfo = (DebugInfo) classObjectMap.get(DebugInfo.class);
                 if (debugInfo != null) {
-                    String msg = ExceptionUtils.getStackFrameString(
-                        debugInfo.getStackEntriesList());
+                    String msg = ExceptionUtils.getStackFrameString(debugInfo.getStackEntriesList());
                     status = status.appendDescription(msg);
                 }
                 return status;
@@ -403,9 +405,7 @@ public class TripleClientStream extends AbstractStream implements ClientStream {
             } finally {
                 ClassLoadUtil.switchContextLoader(tccl);
             }
-
         }
-
 
         private Map<Class<?>, Object> tranFromStatusDetails(List<Any> detailList) {
             Map<Class<?>, Object> map = new HashMap<>(detailList.size());
@@ -433,7 +433,8 @@ public class TripleClientStream extends AbstractStream implements ClientStream {
                     if (!halfClosed) {
                         Http2StreamChannel channel = streamChannelFuture.getNow();
                         if (channel.isActive() && !rst) {
-                            writeQueue.enqueue(CancelQueueCommand.createCommand(streamChannelFuture, Http2Error.CANCEL));
+                            writeQueue.enqueue(
+                                    CancelQueueCommand.createCommand(streamChannelFuture, Http2Error.CANCEL));
                             rst = true;
                         }
                     }
@@ -442,7 +443,6 @@ public class TripleClientStream extends AbstractStream implements ClientStream {
                     onHeaderReceived(headers);
                 }
             });
-
         }
 
         @Override
@@ -460,8 +460,7 @@ public class TripleClientStream extends AbstractStream implements ClientStream {
 
         private void doOnData(ByteBuf data, boolean endStream) {
             if (transportError != null) {
-                transportError.appendDescription(
-                    "Data:" + data.toString(StandardCharsets.UTF_8));
+                transportError.appendDescription("Data:" + data.toString(StandardCharsets.UTF_8));
                 ReferenceCountUtil.release(data);
                 if (transportError.description.length() > 512 || endStream) {
                     handleH2TransportError(transportError);
@@ -469,8 +468,7 @@ public class TripleClientStream extends AbstractStream implements ClientStream {
                 return;
             }
             if (!headerReceived) {
-                handleH2TransportError(TriRpcStatus.INTERNAL.withDescription(
-                    "headers not received before payload"));
+                handleH2TransportError(TriRpcStatus.INTERNAL.withDescription("headers not received before payload"));
                 return;
             }
             deframer.deframe(data);
@@ -479,10 +477,15 @@ public class TripleClientStream extends AbstractStream implements ClientStream {
         @Override
         public void cancelByRemote(long errorCode) {
             executor.execute(() -> {
-                transportError = TriRpcStatus.CANCELLED
-                    .withDescription("Canceled by remote peer, errorCode=" + errorCode);
+                transportError =
+                        TriRpcStatus.CANCELLED.withDescription("Canceled by remote peer, errorCode=" + errorCode);
                 finishProcess(transportError, null, false);
             });
+        }
+
+        @Override
+        public void onClose() {
+            executor.execute(listener::onClose);
         }
     }
 }

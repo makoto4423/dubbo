@@ -16,15 +16,15 @@
  */
 package org.apache.dubbo.rpc.protocol.rest.netty;
 
+import org.apache.dubbo.remoting.transport.ExceedPayloadLimitException;
+
+import java.io.IOException;
+import java.io.OutputStream;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.DefaultHttpContent;
-import org.apache.dubbo.remoting.transport.ExceedPayloadLimitException;
-
-import java.io.IOException;
-import java.io.OutputStream;
 
 public class ChunkOutputStream extends OutputStream {
     final ByteBuf buffer;
@@ -51,8 +51,7 @@ public class ChunkOutputStream extends OutputStream {
     }
 
     private void throwExceedPayloadLimitException(int dataSize) throws ExceedPayloadLimitException {
-        throw new ExceedPayloadLimitException(
-            "Data length too large: " + dataSize + ", max payload: " + chunkSize);
+        throw new ExceedPayloadLimitException("Data length too large: " + dataSize + ", max payload: " + chunkSize);
     }
 
     public void reset() {
@@ -66,15 +65,12 @@ public class ChunkOutputStream extends OutputStream {
         super.close();
     }
 
-
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
-        int dataLengthLeftToWrite = len;
-        int dataToWriteOffset = off;
-        if (buffer.maxWritableBytes() < dataLengthLeftToWrite) {
+        if (buffer.maxWritableBytes() < len) {
             throwExceedPayloadLimitException(buffer.readableBytes() + len);
         }
-        buffer.writeBytes(b, dataToWriteOffset, dataLengthLeftToWrite);
+        buffer.writeBytes(b, off, len);
     }
 
     @Override
@@ -82,10 +78,8 @@ public class ChunkOutputStream extends OutputStream {
         int readable = buffer.readableBytes();
         if (readable == 0) return;
         if (!response.isCommitted()) response.prepareChunkStream();
-        ctx.writeAndFlush(new DefaultHttpContent(buffer.copy()));
+        ctx.write(new DefaultHttpContent(buffer.copy()));
         buffer.clear();
         super.flush();
     }
-
 }
-

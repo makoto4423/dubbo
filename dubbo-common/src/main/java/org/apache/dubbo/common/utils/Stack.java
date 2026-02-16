@@ -23,14 +23,12 @@ import java.util.List;
 /**
  * Stack.
  */
-
 public class Stack<E> {
     private int mSize = 0;
 
-    private final List<E> mElements = new ArrayList<E>();
+    private final List<E> mElements = new ArrayList<>();
 
-    public Stack() {
-    }
+    public Stack() {}
 
     /**
      * push.

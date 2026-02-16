@@ -22,6 +22,11 @@ import org.apache.dubbo.common.logger.LoggerFactory;
 import org.apache.dubbo.common.ssl.AuthPolicy;
 import org.apache.dubbo.common.ssl.CertManager;
 import org.apache.dubbo.common.ssl.ProviderCert;
+import org.apache.dubbo.remoting.Constants;
+
+import javax.net.ssl.SSLSession;
+
+import java.util.List;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -30,9 +35,7 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslHandshakeCompletionEvent;
-
-import javax.net.ssl.SSLSession;
-import java.util.List;
+import io.netty.util.AttributeKey;
 
 import static org.apache.dubbo.common.constants.LoggerCodeConstants.INTERNAL_ERROR;
 
@@ -42,6 +45,7 @@ public class SslServerTlsHandler extends ByteToMessageDecoder {
     private final URL url;
 
     private final boolean sslDetected;
+    private static final AttributeKey<SSLSession> SSL_SESSION_KEY = AttributeKey.valueOf(Constants.SSL_SESSION_KEY);
 
     public SslServerTlsHandler(URL url) {
         this.url = url;
@@ -55,7 +59,12 @@ public class SslServerTlsHandler extends ByteToMessageDecoder {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        logger.error(INTERNAL_ERROR, "unknown error in remoting module", "", "TLS negotiation failed when trying to accept new connection.", cause);
+        logger.error(
+                INTERNAL_ERROR,
+                "unknown error in remoting module",
+                "",
+                "TLS negotiation failed when trying to accept new connection.",
+                cause);
     }
 
     @Override
@@ -63,12 +72,19 @@ public class SslServerTlsHandler extends ByteToMessageDecoder {
         if (evt instanceof SslHandshakeCompletionEvent) {
             SslHandshakeCompletionEvent handshakeEvent = (SslHandshakeCompletionEvent) evt;
             if (handshakeEvent.isSuccess()) {
-                SSLSession session = ctx.pipeline().get(SslHandler.class).engine().getSession();
+                SSLSession session =
+                        ctx.pipeline().get(SslHandler.class).engine().getSession();
                 logger.info("TLS negotiation succeed with: " + session.getPeerHost());
                 // Remove after handshake success.
                 ctx.pipeline().remove(this);
+                ctx.channel().attr(SSL_SESSION_KEY).set(session);
             } else {
-                logger.error(INTERNAL_ERROR, "", "", "TLS negotiation failed when trying to accept new connection.", handshakeEvent.cause());
+                logger.error(
+                        INTERNAL_ERROR,
+                        "",
+                        "",
+                        "TLS negotiation failed when trying to accept new connection.",
+                        handshakeEvent.cause());
                 ctx.close();
             }
         }
@@ -76,7 +92,8 @@ public class SslServerTlsHandler extends ByteToMessageDecoder {
     }
 
     @Override
-    protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
+    protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list)
+            throws Exception {
         // Will use the first five bytes to detect a protocol.
         if (byteBuf.readableBytes() < 5) {
             return;
@@ -86,12 +103,13 @@ public class SslServerTlsHandler extends ByteToMessageDecoder {
             return;
         }
 
-        CertManager certManager = url.getOrDefaultFrameworkModel().getBeanFactory().getBean(CertManager.class);
-        ProviderCert providerConnectionConfig = certManager.getProviderConnectionConfig(url, channelHandlerContext.channel().remoteAddress());
+        CertManager certManager =
+                url.getOrDefaultFrameworkModel().getBeanFactory().getBean(CertManager.class);
+        ProviderCert providerConnectionConfig = certManager.getProviderConnectionConfig(
+                url, channelHandlerContext.channel().remoteAddress());
 
         if (providerConnectionConfig == null) {
-            ChannelPipeline p = channelHandlerContext.pipeline();
-            p.remove(this);
+            channelHandlerContext.pipeline().remove(this);
             return;
         }
 
@@ -102,8 +120,8 @@ public class SslServerTlsHandler extends ByteToMessageDecoder {
         }
 
         if (providerConnectionConfig.getAuthPolicy() == AuthPolicy.NONE) {
-            ChannelPipeline p = channelHandlerContext.pipeline();
-            p.remove(this);
+            channelHandlerContext.pipeline().remove(this);
+            return;
         }
 
         logger.error(INTERNAL_ERROR, "", "", "TLS negotiation failed when trying to accept new connection.");
@@ -120,5 +138,4 @@ public class SslServerTlsHandler extends ByteToMessageDecoder {
         p.addLast("unificationA", new SslServerTlsHandler(url, true));
         p.remove(this);
     }
-
 }

@@ -120,7 +120,8 @@ public final class DubboBootstrap {
     }
 
     public static DubboBootstrap getInstance(ApplicationModel applicationModel) {
-        return ConcurrentHashMapUtils.computeIfAbsent(instanceMap, applicationModel, _k -> new DubboBootstrap(applicationModel));
+        return ConcurrentHashMapUtils.computeIfAbsent(
+                instanceMap, applicationModel, _k -> new DubboBootstrap(applicationModel));
     }
 
     public static DubboBootstrap newInstance() {
@@ -190,12 +191,14 @@ public final class DubboBootstrap {
     }
 
     private void notifyStarted(ApplicationModel applicationModel) {
-        ExtensionLoader<DubboBootstrapStartStopListener> exts = applicationModel.getExtensionLoader(DubboBootstrapStartStopListener.class);
+        ExtensionLoader<DubboBootstrapStartStopListener> exts =
+                applicationModel.getExtensionLoader(DubboBootstrapStartStopListener.class);
         exts.getSupportedExtensionInstances().forEach(ext -> ext.onStart(DubboBootstrap.this));
     }
 
     private void notifyStopped(ApplicationModel applicationModel) {
-        ExtensionLoader<DubboBootstrapStartStopListener> exts = applicationModel.getExtensionLoader(DubboBootstrapStartStopListener.class);
+        ExtensionLoader<DubboBootstrapStartStopListener> exts =
+                applicationModel.getExtensionLoader(DubboBootstrapStartStopListener.class);
         exts.getSupportedExtensionInstances().forEach(ext -> ext.onStop(DubboBootstrap.this));
         executeMutually(() -> {
             awaited.set(true);
@@ -353,7 +356,7 @@ public final class DubboBootstrap {
     }
 
     public void setTakeoverMode(BootstrapTakeoverMode takeoverMode) {
-        //TODO this.started.set(false);
+        // TODO this.started.set(false);
         this.takeoverMode = takeoverMode;
     }
 
@@ -368,7 +371,6 @@ public final class DubboBootstrap {
     public ConfigManager getConfigManager() {
         return configManager;
     }
-
 
     // MetadataReportConfig correlative methods
 
@@ -437,7 +439,6 @@ public final class DubboBootstrap {
         return this;
     }
 
-
     // {@link RegistryConfig} correlative methods
 
     /**
@@ -490,7 +491,6 @@ public final class DubboBootstrap {
         registryConfigs.forEach(this::registry);
         return this;
     }
-
 
     // {@link ProtocolConfig} correlative methods
     public DubboBootstrap protocol(Consumer<ProtocolBuilder> consumerBuilder) {
@@ -712,7 +712,7 @@ public final class DubboBootstrap {
         return this;
     }
 
-    public DubboBootstrap tracing(TracingConfig tracing){
+    public DubboBootstrap tracing(TracingConfig tracing) {
         tracing.setScopeModel(applicationModel);
         configManager.setTracing(tracing);
         return this;
@@ -777,7 +777,6 @@ public final class DubboBootstrap {
     public DubboBootstrap endModule() {
         return this;
     }
-
 
     public class Module {
         private ModuleModel moduleModel;
@@ -897,5 +896,4 @@ public final class DubboBootstrap {
             return this;
         }
     }
-
 }

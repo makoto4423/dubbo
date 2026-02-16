@@ -21,21 +21,22 @@ import org.apache.dubbo.remoting.http.RestClient;
 import org.apache.dubbo.remoting.http.RestResult;
 import org.apache.dubbo.remoting.http.config.HttpClientConfig;
 
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-import okhttp3.ResponseBody;
-import okhttp3.internal.http.HttpMethod;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.ConnectionPool;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
+import okhttp3.internal.http.HttpMethod;
 
 // TODO add version 4.0 implements ,and default version is < 4.0,for dependency conflict
 public class OKHttpRestClient implements RestClient {
@@ -132,9 +133,7 @@ public class OKHttpRestClient implements RestClient {
     }
 
     @Override
-    public void close(int timeout) {
-
-    }
+    public void close(int timeout) {}
 
     @Override
     public boolean isClosed() {
@@ -142,11 +141,15 @@ public class OKHttpRestClient implements RestClient {
     }
 
     public OkHttpClient createHttpClient(HttpClientConfig httpClientConfig) {
-        OkHttpClient client = new OkHttpClient.Builder().
-            readTimeout(httpClientConfig.getReadTimeout(), TimeUnit.SECONDS).
-            writeTimeout(httpClientConfig.getWriteTimeout(), TimeUnit.SECONDS).
-            connectTimeout(httpClientConfig.getConnectTimeout(), TimeUnit.SECONDS).
-            build();
-        return client;
+
+        return new OkHttpClient.Builder()
+                .readTimeout(httpClientConfig.getReadTimeout(), TimeUnit.SECONDS)
+                .writeTimeout(httpClientConfig.getWriteTimeout(), TimeUnit.SECONDS)
+                .connectTimeout(httpClientConfig.getConnectTimeout(), TimeUnit.SECONDS)
+                .connectionPool(new ConnectionPool(
+                        httpClientConfig.getMaxIdleConnections(),
+                        httpClientConfig.getKeepAliveDuration(),
+                        TimeUnit.SECONDS))
+                .build();
     }
 }

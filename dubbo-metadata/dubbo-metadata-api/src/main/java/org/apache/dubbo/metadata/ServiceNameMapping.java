@@ -25,11 +25,12 @@ import org.apache.dubbo.rpc.model.ScopeModel;
 import org.apache.dubbo.rpc.model.ScopeModelUtil;
 import org.apache.dubbo.rpc.service.Destroyable;
 
-import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeSet;
 
 import static java.util.Collections.emptySet;
+import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Stream.of;
 import static org.apache.dubbo.common.constants.CommonConstants.COMMA_SEPARATOR;
 import static org.apache.dubbo.common.extension.ExtensionScope.APPLICATION;
 
@@ -64,8 +65,8 @@ public interface ServiceNameMapping extends Destroyable {
     }
 
     static String buildGroup(String serviceInterface) {
-        //the issue : https://github.com/apache/dubbo/issues/4671
-//        return DEFAULT_MAPPING_GROUP + SLASH + serviceInterface;
+        // the issue : https://github.com/apache/dubbo/issues/4671
+        //        return DEFAULT_MAPPING_GROUP + SLASH + serviceInterface;
         return serviceInterface;
     }
 
@@ -88,12 +89,15 @@ public interface ServiceNameMapping extends Destroyable {
         if (StringUtils.isBlank(content)) {
             return emptySet();
         }
-        return new TreeSet<>(Arrays.asList(content.split(COMMA_SEPARATOR)));
+        return new TreeSet<>(of(content.split(COMMA_SEPARATOR))
+                .map(String::trim)
+                .filter(StringUtils::isNotEmpty)
+                .collect(toSet()));
     }
 
     static Set<String> getMappingByUrl(URL consumerURL) {
         String providedBy = consumerURL.getParameter(RegistryConstants.PROVIDED_BY);
-        if(StringUtils.isBlank(providedBy)) {
+        if (StringUtils.isBlank(providedBy)) {
             return null;
         }
         return AbstractServiceNameMapping.parseServices(providedBy);

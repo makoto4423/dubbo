@@ -20,14 +20,14 @@ import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.url.component.ServiceConfigURL;
 import org.apache.dubbo.rpc.support.DemoService;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * {@link RpcStatus}
@@ -39,6 +39,10 @@ class RpcStatusTest {
         URL url = new ServiceConfigURL("dubbo", "127.0.0.1", 91031, DemoService.class.getName());
         String methodName = "testBeginCountEndCount";
         int max = 2;
+
+        RpcStatus.removeStatus(url);
+        RpcStatus.removeStatus(url, methodName);
+
         boolean flag = RpcStatus.beginCount(url, methodName, max);
         RpcStatus urlRpcStatus = RpcStatus.getStatus(url);
         RpcStatus methodRpcStatus = RpcStatus.getStatus(url, methodName);
@@ -59,13 +63,16 @@ class RpcStatusTest {
         Assertions.assertTrue(flag);
         flag = RpcStatus.beginCount(url, methodName, max);
         Assertions.assertFalse(flag);
-
     }
 
     @Test
     void testBeginCountEndCountInMultiThread() throws Exception {
         URL url = new ServiceConfigURL("dubbo", "127.0.0.1", 91032, DemoService.class.getName());
         String methodName = "testBeginCountEndCountInMultiThread";
+
+        RpcStatus.removeStatus(url);
+        RpcStatus.removeStatus(url, methodName);
+
         int max = 50;
         int threadNum = 10;
         AtomicInteger successCount = new AtomicInteger();
@@ -93,7 +100,6 @@ class RpcStatusTest {
         startLatch.countDown();
         endLatch.await();
         Assertions.assertEquals(successCount.get(), max);
-
     }
 
     @Test
@@ -101,6 +107,10 @@ class RpcStatusTest {
         URL url = new ServiceConfigURL("dubbo", "127.0.0.1", 91033, DemoService.class.getName());
         String methodName = "testStatistics";
         int max = 0;
+
+        RpcStatus.removeStatus(url);
+        RpcStatus.removeStatus(url, methodName);
+
         RpcStatus.beginCount(url, methodName, max);
         RpcStatus.beginCount(url, methodName, max);
         RpcStatus.beginCount(url, methodName, max);

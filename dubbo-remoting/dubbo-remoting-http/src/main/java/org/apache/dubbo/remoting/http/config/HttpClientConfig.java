@@ -22,15 +22,17 @@ public class HttpClientConfig {
     private int connectTimeout = 6 * 1000;
     private int chunkLength = 8196;
 
+    private int maxIdleConnections = 20;
+
+    private int keepAliveDuration = 30 * 1000;
+
     private int HTTP_CLIENT_CONNECTION_MANAGER_MAX_PER_ROUTE = 20;
     private int HTTP_CLIENT_CONNECTION_MANAGER_MAX_TOTAL = 20;
     private int HTTPCLIENT_KEEP_ALIVE_DURATION = 30 * 1000;
     private int HTTP_CLIENT_CONNECTION_MANAGER_CLOSE_WAIT_TIME_MS = 1000;
     private int HTTP_CLIENT_CONNECTION_MANAGER_CLOSE_IDLE_TIME_S = 30;
 
-
-    public HttpClientConfig() {
-    }
+    public HttpClientConfig() {}
 
     public int getReadTimeout() {
         return readTimeout;
@@ -58,5 +60,25 @@ public class HttpClientConfig {
 
     public int getChunkLength() {
         return chunkLength;
+    }
+
+    public int getMaxIdleConnections() {
+
+        return maxIdleConnections;
+    }
+
+    public void setMaxIdleConnections(int maxIdleConnections) {
+
+        this.maxIdleConnections = maxIdleConnections;
+    }
+
+    public int getKeepAliveDuration() {
+
+        return keepAliveDuration;
+    }
+
+    public void setKeepAliveDuration(int keepAliveDuration) {
+
+        this.keepAliveDuration = keepAliveDuration;
     }
 }

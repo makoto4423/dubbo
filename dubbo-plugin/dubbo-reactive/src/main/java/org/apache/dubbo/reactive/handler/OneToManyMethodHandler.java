@@ -14,17 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.dubbo.reactive.handler;
 
 import org.apache.dubbo.common.stream.StreamObserver;
 import org.apache.dubbo.reactive.calls.ReactorServerCalls;
 import org.apache.dubbo.rpc.stub.StubMethodHandler;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * The handler of OneToMany() method for stub invocation.
@@ -42,7 +42,6 @@ public class OneToManyMethodHandler<T, R> implements StubMethodHandler<T, R> {
     public CompletableFuture<?> invoke(Object[] arguments) {
         T request = (T) arguments[0];
         StreamObserver<R> responseObserver = (StreamObserver<R>) arguments[1];
-        ReactorServerCalls.oneToMany(request, responseObserver, func);
-        return CompletableFuture.completedFuture(null);
+        return ReactorServerCalls.oneToMany(request, responseObserver, func);
     }
 }

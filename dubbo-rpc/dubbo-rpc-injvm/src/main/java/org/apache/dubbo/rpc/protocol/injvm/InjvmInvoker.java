@@ -36,6 +36,7 @@ import org.apache.dubbo.rpc.Result;
 import org.apache.dubbo.rpc.RpcContext;
 import org.apache.dubbo.rpc.RpcException;
 import org.apache.dubbo.rpc.RpcInvocation;
+import org.apache.dubbo.rpc.model.ConsumerModel;
 import org.apache.dubbo.rpc.model.MethodDescriptor;
 import org.apache.dubbo.rpc.model.ServiceModel;
 import org.apache.dubbo.rpc.protocol.AbstractInvoker;
@@ -72,15 +73,17 @@ public class InjvmInvoker<T> extends AbstractInvoker<T> {
 
     private final boolean shouldIgnoreSameModule;
 
-    private static final boolean setFutureWhenSync = Boolean.parseBoolean(System.getProperty(CommonConstants.SET_FUTURE_IN_SYNC_MODE, "true"));
+    private static final boolean setFutureWhenSync =
+            Boolean.parseBoolean(System.getProperty(CommonConstants.SET_FUTURE_IN_SYNC_MODE, "true"));
 
     InjvmInvoker(Class<T> type, URL url, String key, Map<String, Exporter<?>> exporterMap) {
         super(type, url);
         this.key = key;
         this.exporterMap = exporterMap;
         this.executorRepository = ExecutorRepository.getInstance(url.getOrDefaultApplicationModel());
-        this.paramDeepCopyUtil = url.getOrDefaultFrameworkModel().getExtensionLoader(ParamDeepCopyUtil.class)
-            .getExtension(url.getParameter(CommonConstants.INJVM_COPY_UTIL_KEY, DefaultParamDeepCopyUtil.NAME));
+        this.paramDeepCopyUtil = url.getOrDefaultFrameworkModel()
+                .getExtensionLoader(ParamDeepCopyUtil.class)
+                .getExtension(url.getParameter(CommonConstants.INJVM_COPY_UTIL_KEY, DefaultParamDeepCopyUtil.NAME));
         this.shouldIgnoreSameModule = url.getParameter(CommonConstants.INJVM_IGNORE_SAME_MODULE_KEY, false);
     }
 
@@ -111,17 +114,21 @@ public class InjvmInvoker<T> extends AbstractInvoker<T> {
         }
         if (consumerUrl == null) {
             // no need to sync, multi-objects is acceptable and will be gc-ed.
-            consumerUrl = new DubboServiceAddressURL(serverURL.getUrlAddress(), serverURL.getUrlParam(), getUrl(), null);
+            consumerUrl =
+                    new DubboServiceAddressURL(serverURL.getUrlAddress(), serverURL.getUrlParam(), getUrl(), null);
         }
 
-        int timeout = RpcUtils.calculateTimeout(consumerUrl, invocation, RpcUtils.getMethodName(invocation), DEFAULT_TIMEOUT);
+        int timeout =
+                RpcUtils.calculateTimeout(consumerUrl, invocation, RpcUtils.getMethodName(invocation), DEFAULT_TIMEOUT);
         if (timeout <= 0) {
-            return AsyncRpcResult.newDefaultAsyncResult(new RpcException(RpcException.TIMEOUT_TERMINATE,
-                "No time left for making the following call: " + invocation.getServiceName() + "."
-                    + RpcUtils.getMethodName(invocation) + ", terminate directly."), invocation);
+            return AsyncRpcResult.newDefaultAsyncResult(
+                    new RpcException(
+                            RpcException.TIMEOUT_TERMINATE,
+                            "No time left for making the following call: " + invocation.getServiceName() + "."
+                                    + RpcUtils.getMethodName(invocation) + ", terminate directly."),
+                    invocation);
         }
         invocation.setAttachment(TIMEOUT_KEY, String.valueOf(timeout));
-
 
         String desc = ReflectUtils.getDesc(invocation.getParameterTypes());
 
@@ -131,28 +138,31 @@ public class InjvmInvoker<T> extends AbstractInvoker<T> {
         if (isAsync(invoker.getUrl(), getUrl())) {
             ((RpcInvocation) copiedInvocation).setInvokeMode(InvokeMode.ASYNC);
             // use consumer executor
-            ExecutorService executor = executorRepository.createExecutorIfAbsent(ExecutorUtil.setThreadName(getUrl(), SERVER_THREAD_POOL_NAME));
-            CompletableFuture<AppResponse> appResponseFuture = CompletableFuture.supplyAsync(() -> {
-                // clear thread local before child invocation, prevent context pollution
-                InternalThreadLocalMap originTL = InternalThreadLocalMap.getAndRemove();
-                try {
-                    RpcContext.getServiceContext().setRemoteAddress(LOCALHOST_VALUE, 0);
-                    RpcContext.getServiceContext().setRemoteApplicationName(getUrl().getApplication());
-                    Result result = invoker.invoke(copiedInvocation);
-                    if (result.hasException()) {
-                        AppResponse appResponse = new AppResponse(result.getException());
-                        appResponse.setObjectAttachments(new HashMap<>(result.getObjectAttachments()));
-                        return appResponse;
-                    } else {
-                        rebuildValue(invocation, desc, result);
-                        AppResponse appResponse = new AppResponse(result.getValue());
-                        appResponse.setObjectAttachments(new HashMap<>(result.getObjectAttachments()));
-                        return appResponse;
-                    }
-                } finally {
-                    InternalThreadLocalMap.set(originTL);
-                }
-            }, executor);
+            ExecutorService executor = executorRepository.createExecutorIfAbsent(
+                    ExecutorUtil.setThreadName(getUrl(), SERVER_THREAD_POOL_NAME));
+            CompletableFuture<AppResponse> appResponseFuture = CompletableFuture.supplyAsync(
+                    () -> {
+                        // clear thread local before child invocation, prevent context pollution
+                        InternalThreadLocalMap originTL = InternalThreadLocalMap.getAndRemove();
+                        try {
+                            RpcContext.getServiceContext().setRemoteAddress(LOCALHOST_VALUE, 0);
+                            RpcContext.getServiceContext().setRemoteApplicationName(getUrl().getApplication());
+                            Result result = invoker.invoke(copiedInvocation);
+                            if (result.hasException()) {
+                                AppResponse appResponse = new AppResponse(result.getException());
+                                appResponse.setObjectAttachments(new HashMap<>(result.getObjectAttachments()));
+                                return appResponse;
+                            } else {
+                                rebuildValue(invocation, invoker, result);
+                                AppResponse appResponse = new AppResponse(result.getValue());
+                                appResponse.setObjectAttachments(new HashMap<>(result.getObjectAttachments()));
+                                return appResponse;
+                            }
+                        } finally {
+                            InternalThreadLocalMap.set(originTL);
+                        }
+                    },
+                    executor);
             // save for 2.6.x compatibility, for example, TraceFilter in Zipkin uses com.alibaba.xxx.FutureAdapter
             if (setFutureWhenSync || ((RpcInvocation) invocation).getInvokeMode() != InvokeMode.SYNC) {
                 FutureContext.getContext().setCompatibleFuture(appResponseFuture);
@@ -181,7 +191,7 @@ public class InjvmInvoker<T> extends AbstractInvoker<T> {
                         if (r.hasException()) {
                             rpcResult.setException(r.getException());
                         } else {
-                            Object rebuildValue = rebuildValue(invocation, desc, r.getValue());
+                            Object rebuildValue = rebuildValue(invocation, invoker, r.getValue());
                             rpcResult.setValue(rebuildValue);
                         }
                     }
@@ -192,14 +202,13 @@ public class InjvmInvoker<T> extends AbstractInvoker<T> {
                 if (result.hasException()) {
                     rpcResult.setException(result.getException());
                 } else {
-                    Object rebuildValue = rebuildValue(invocation, desc, result.getValue());
+                    Object rebuildValue = rebuildValue(invocation, invoker, result.getValue());
                     rpcResult.setValue(rebuildValue);
                 }
                 rpcResult.setObjectAttachments(new HashMap<>(result.getObjectAttachments()));
                 future.complete(rpcResult);
             }
             return new AsyncRpcResult(future, invocation);
-
         }
     }
 
@@ -224,16 +233,20 @@ public class InjvmInvoker<T> extends AbstractInvoker<T> {
         }
         String methodName = invocation.getMethodName();
 
-        ServiceModel consumerServiceModel = invocation.getServiceModel();
-        boolean shouldSkip = shouldIgnoreSameModule && consumerServiceModel != null &&
-            Objects.equals(providerServiceModel.getModuleModel(), consumerServiceModel.getModuleModel());
-        if (CommonConstants.$INVOKE.equals(methodName) || shouldSkip) {
+        if (isSkipCopy(invocation, invoker)) {
             // generic invoke, skip copy arguments
-            RpcInvocation copiedInvocation = new RpcInvocation(invocation.getTargetServiceUniqueName(),
-                providerServiceModel, methodName, invocation.getServiceName(), invocation.getProtocolServiceKey(),
-                invocation.getParameterTypes(), invocation.getArguments(), invocation.copyObjectAttachments(),
-                invocation.getInvoker(), new HashMap<>(),
-                invocation instanceof RpcInvocation ? ((RpcInvocation) invocation).getInvokeMode() : null);
+            RpcInvocation copiedInvocation = new RpcInvocation(
+                    invocation.getTargetServiceUniqueName(),
+                    providerServiceModel,
+                    methodName,
+                    invocation.getServiceName(),
+                    invocation.getProtocolServiceKey(),
+                    invocation.getParameterTypes(),
+                    invocation.getArguments(),
+                    invocation.copyObjectAttachments(),
+                    invocation.getInvoker(),
+                    new HashMap<>(),
+                    invocation instanceof RpcInvocation ? ((RpcInvocation) invocation).getInvokeMode() : null);
             copiedInvocation.setInvoker(invoker);
             return copiedInvocation;
         }
@@ -259,11 +272,18 @@ public class InjvmInvoker<T> extends AbstractInvoker<T> {
                     realArgument = args;
                 }
 
-                RpcInvocation copiedInvocation = new RpcInvocation(invocation.getTargetServiceUniqueName(),
-                    providerServiceModel, methodName, invocation.getServiceName(), invocation.getProtocolServiceKey(),
-                    pts, realArgument, invocation.copyObjectAttachments(),
-                    invocation.getInvoker(), new HashMap<>(),
-                    invocation instanceof RpcInvocation ? ((RpcInvocation) invocation).getInvokeMode() : null);
+                RpcInvocation copiedInvocation = new RpcInvocation(
+                        invocation.getTargetServiceUniqueName(),
+                        providerServiceModel,
+                        methodName,
+                        invocation.getServiceName(),
+                        invocation.getProtocolServiceKey(),
+                        pts,
+                        realArgument,
+                        invocation.copyObjectAttachments(),
+                        invocation.getInvoker(),
+                        new HashMap<>(),
+                        invocation instanceof RpcInvocation ? ((RpcInvocation) invocation).getInvokeMode() : null);
                 copiedInvocation.setInvoker(invoker);
                 return copiedInvocation;
             } finally {
@@ -274,21 +294,55 @@ public class InjvmInvoker<T> extends AbstractInvoker<T> {
         }
     }
 
-    private Object rebuildValue(Invocation invocation, String desc, Object originValue) {
+    private boolean isSkipCopy(Invocation invocation, Invoker<?> invoker) {
+        ServiceModel providerServiceModel = invoker.getUrl().getServiceModel();
+
+        if (providerServiceModel == null) {
+            return true;
+        }
+        String methodName = invocation.getMethodName();
+
+        ServiceModel consumerServiceModel = invocation.getServiceModel();
+        boolean shouldSkip = shouldIgnoreSameModule
+                && consumerServiceModel != null
+                && Objects.equals(providerServiceModel.getModuleModel(), consumerServiceModel.getModuleModel());
+
+        return CommonConstants.$INVOKE.equals(methodName)
+                || CommonConstants.$INVOKE_ASYNC.equals(methodName)
+                || shouldSkip;
+    }
+
+    private Object rebuildValue(Invocation invocation, Invoker<?> invoker, Object originValue) {
+        if (isSkipCopy(invocation, invoker)) {
+            return originValue;
+        }
+
         Object value = originValue;
-        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         try {
-            ServiceModel consumerServiceModel = getUrl().getServiceModel();
-            if (consumerServiceModel != null) {
-                Class<?> returnType = getReturnType(consumerServiceModel, invocation.getMethodName(), desc);
-                if (returnType != null) {
-                    Thread.currentThread().setContextClassLoader(consumerServiceModel.getClassLoader());
-                    value = paramDeepCopyUtil.copy(consumerUrl, originValue, returnType);
+            // 1. By default, the classloader of the current Thread is the consumer class loader.
+            ClassLoader consumerClassLoader = contextClassLoader;
+            ServiceModel serviceModel = getUrl().getServiceModel();
+            // 2. If there is a ConsumerModel in the url, the classloader of the ConsumerModel is consumerLoader
+            if (Objects.nonNull(serviceModel) && serviceModel instanceof ConsumerModel) {
+                consumerClassLoader = serviceModel.getClassLoader();
+            }
+            // 3. request result copy
+            if (Objects.nonNull(consumerClassLoader)) {
+                Thread.currentThread().setContextClassLoader(consumerClassLoader);
+                Type[] returnTypes = RpcUtils.getReturnTypes(invocation);
+                if (returnTypes == null) {
+                    return originValue;
+                }
+                if (returnTypes.length == 1) {
+                    value = paramDeepCopyUtil.copy(consumerUrl, originValue, (Class<?>) returnTypes[0]);
+                } else if (returnTypes.length == 2) {
+                    value = paramDeepCopyUtil.copy(consumerUrl, originValue, (Class<?>) returnTypes[0], returnTypes[1]);
                 }
             }
             return value;
         } finally {
-            Thread.currentThread().setContextClassLoader(cl);
+            Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
     }
 

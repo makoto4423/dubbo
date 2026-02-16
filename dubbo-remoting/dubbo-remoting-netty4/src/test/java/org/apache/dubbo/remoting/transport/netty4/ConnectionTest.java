@@ -28,18 +28,19 @@ import org.apache.dubbo.remoting.api.pu.DefaultPuHandler;
 import org.apache.dubbo.rpc.model.ApplicationModel;
 import org.apache.dubbo.rpc.model.ModuleModel;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
+import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.apache.dubbo.common.constants.CommonConstants.EXECUTOR_MANAGEMENT_MODE_DEFAULT;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
+import static org.apache.dubbo.common.constants.CommonConstants.EXECUTOR_MANAGEMENT_MODE_DEFAULT;
+import static org.awaitility.Awaitility.await;
 
 public class ConnectionTest {
 
@@ -66,7 +67,9 @@ public class ConnectionTest {
         url = url.putAttribute(CommonConstants.SCOPE_MODEL, moduleModel);
         server = new NettyPortUnificationServer(url, new DefaultPuHandler());
         server.bind();
-        connectionManager = url.getOrDefaultFrameworkModel().getExtensionLoader(ConnectionManager.class).getExtension(MultiplexProtocolConnectionManager.NAME);
+        connectionManager = url.getOrDefaultFrameworkModel()
+                .getExtensionLoader(ConnectionManager.class)
+                .getExtension(MultiplexProtocolConnectionManager.NAME);
     }
 
     @AfterAll
@@ -126,7 +129,8 @@ public class ConnectionTest {
     void connectSyncTest() throws Throwable {
         int port = NetUtils.getAvailablePort();
         URL url = URL.valueOf("empty://127.0.0.1:" + port + "?foo=bar");
-        NettyPortUnificationServer nettyPortUnificationServer = new NettyPortUnificationServer(url, new DefaultPuHandler());
+        NettyPortUnificationServer nettyPortUnificationServer =
+                new NettyPortUnificationServer(url, new DefaultPuHandler());
         nettyPortUnificationServer.bind();
         final AbstractConnectionClient connectionClient = connectionManager.connect(url, new DefaultPuHandler());
         Assertions.assertTrue(connectionClient.isAvailable());
@@ -136,12 +140,12 @@ public class ConnectionTest {
 
         nettyPortUnificationServer.bind();
         // auto reconnect
+        await().atMost(Duration.ofSeconds(100)).until(() -> connectionClient.isAvailable());
         Assertions.assertTrue(connectionClient.isAvailable());
 
         connectionClient.close();
         Assertions.assertFalse(connectionClient.isAvailable());
         nettyPortUnificationServer.close();
-
     }
 
     @Test

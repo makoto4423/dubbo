@@ -26,30 +26,55 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SpringCloudServiceInstanceNotificationCustomizer implements ServiceInstanceNotificationCustomizer {
+    private static final String REST_PROTOCOL = "rest";
+
     @Override
     public void customize(List<ServiceInstance> serviceInstance) {
         if (serviceInstance.isEmpty()) {
             return;
         }
 
-        if (!serviceInstance.stream().allMatch(instance -> "SPRING_CLOUD".equals(instance.getMetadata("preserved.register.source")))) {
+        if (!serviceInstance.stream()
+                .allMatch(instance -> "SPRING_CLOUD".equals(instance.getMetadata("preserved.register.source")))) {
             return;
         }
 
         for (ServiceInstance instance : serviceInstance) {
-            MetadataInfo.ServiceInfo serviceInfo = new MetadataInfo.ServiceInfo("*", "*", "*", "rest", instance.getPort(), "*", new HashMap<>());
-            String revision = "SPRING_CLOUD-" + instance.getServiceName() + "-" + instance.getAddress() + "-" + instance.getPort();
-            MetadataInfo metadataInfo = new MetadataInfo(instance.getServiceName(), revision, new ConcurrentHashMap<>(Collections.singletonMap("*", serviceInfo))) {
-                @Override
-                public List<ServiceInfo> getMatchedServiceInfos(ProtocolServiceKey consumerProtocolServiceKey) {
-                    getServices().putIfAbsent(consumerProtocolServiceKey.getServiceKeyString(),
-                        new MetadataInfo.ServiceInfo(consumerProtocolServiceKey.getInterfaceName(),
-                            consumerProtocolServiceKey.getGroup(), consumerProtocolServiceKey.getVersion(),
-                            consumerProtocolServiceKey.getProtocol(), instance.getPort(), consumerProtocolServiceKey.getInterfaceName(), new HashMap<>()));
-                    return super.getMatchedServiceInfos(consumerProtocolServiceKey);
-                }
-            };
+            MetadataInfo.ServiceInfo serviceInfo = new MetadataInfo.ServiceInfo(
+                    "*", "*", "*", REST_PROTOCOL, instance.getPort(), "*", new HashMap<>());
+            String revision = "SPRING_CLOUD-" + instance.getServiceName() + "-" + instance.getAddress() + "-"
+                    + instance.getPort();
+            MetadataInfo metadataInfo =
+                    new MetadataInfo(
+                            instance.getServiceName(),
+                            revision,
+                            new ConcurrentHashMap<>(Collections.singletonMap("*", serviceInfo))) {
+                        @Override
+                        public List<ServiceInfo> getMatchedServiceInfos(ProtocolServiceKey consumerProtocolServiceKey) {
+                            String consumerProtocol = consumerProtocolServiceKey.getProtocol();
+                            if (consumerProtocol != null && !REST_PROTOCOL.equalsIgnoreCase(consumerProtocol)) {
+                                return Collections.emptyList();
+                            }
 
+                            String protocol = consumerProtocol;
+                            if (protocol == null) {
+                                protocol = REST_PROTOCOL;
+                            }
+
+                            getServices()
+                                    .putIfAbsent(
+                                            consumerProtocolServiceKey.getServiceKeyString(),
+                                            new MetadataInfo.ServiceInfo(
+                                                    consumerProtocolServiceKey.getInterfaceName(),
+                                                    consumerProtocolServiceKey.getGroup(),
+                                                    consumerProtocolServiceKey.getVersion(),
+                                                    protocol,
+                                                    instance.getPort(),
+                                                    consumerProtocolServiceKey.getInterfaceName(),
+                                                    new HashMap<>()));
+                            return super.getMatchedServiceInfos(consumerProtocolServiceKey);
+                        }
+                    };
 
             instance.setServiceMetadata(metadataInfo);
         }

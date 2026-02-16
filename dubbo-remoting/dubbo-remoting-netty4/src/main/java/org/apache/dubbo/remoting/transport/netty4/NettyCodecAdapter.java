@@ -19,6 +19,10 @@ package org.apache.dubbo.remoting.transport.netty4;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.remoting.Codec2;
 import org.apache.dubbo.remoting.buffer.ChannelBuffer;
+import org.apache.dubbo.remoting.exchange.support.MultiMessage;
+
+import java.io.IOException;
+import java.util.List;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -26,15 +30,11 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.MessageToByteEncoder;
-import org.apache.dubbo.remoting.exchange.support.MultiMessage;
-
-import java.io.IOException;
-import java.util.List;
 
 /**
  * NettyCodecAdapter.
  */
-final public class NettyCodecAdapter {
+public final class NettyCodecAdapter {
 
     private final ChannelHandler encoder = new InternalEncoder();
 
@@ -94,26 +94,30 @@ final public class NettyCodecAdapter {
         protected void decode(ChannelHandlerContext ctx, ByteBuf input, List<Object> out) throws Exception {
 
             ChannelBuffer message = new NettyBackedChannelBuffer(input);
+            try {
+                NettyChannel channel = NettyChannel.getOrAddChannel(ctx.channel(), url, handler);
 
-            NettyChannel channel = NettyChannel.getOrAddChannel(ctx.channel(), url, handler);
-
-            // decode object.
-            do {
-                int saveReaderIndex = message.readerIndex();
-                Object msg = codec.decode(channel, message);
-                if (msg == Codec2.DecodeResult.NEED_MORE_INPUT) {
-                    message.readerIndex(saveReaderIndex);
-                    break;
-                } else {
-                    //is it possible to go here ?
-                    if (saveReaderIndex == message.readerIndex()) {
-                        throw new IOException("Decode without read data.");
+                // decode object.
+                do {
+                    int saveReaderIndex = message.readerIndex();
+                    Object msg = codec.decode(channel, message);
+                    if (msg == Codec2.DecodeResult.NEED_MORE_INPUT) {
+                        message.readerIndex(saveReaderIndex);
+                        break;
+                    } else {
+                        // is it possible to go here ?
+                        if (saveReaderIndex == message.readerIndex()) {
+                            throw new IOException("Decode without read data.");
+                        }
+                        if (msg != null) {
+                            out.add(msg);
+                        }
                     }
-                    if (msg != null) {
-                        out.add(msg);
-                    }
-                }
-            } while (message.readable());
+                } while (message.readable());
+            } catch (Throwable t) {
+                message.skipBytes(message.readableBytes());
+                throw t;
+            }
         }
     }
 }

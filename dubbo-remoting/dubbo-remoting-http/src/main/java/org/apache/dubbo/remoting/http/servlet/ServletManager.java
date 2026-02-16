@@ -17,6 +17,7 @@
 package org.apache.dubbo.remoting.http.servlet;
 
 import javax.servlet.ServletContext;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -29,7 +30,7 @@ public class ServletManager {
 
     private static final ServletManager INSTANCE = new ServletManager();
 
-    private final Map<Integer, ServletContext> contextMap = new ConcurrentHashMap<Integer, ServletContext>();
+    private final Map<Integer, ServletContext> contextMap = new ConcurrentHashMap<>();
 
     public static ServletManager getInstance() {
         return INSTANCE;

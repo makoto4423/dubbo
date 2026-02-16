@@ -54,7 +54,7 @@ public class LfuCache implements Cache {
      * @param url A valid URL instance
      */
     @SuppressWarnings("rawtypes")
-    public LfuCache (URL url) {
+    public LfuCache(URL url) {
         final int max = url.getParameter("cache.size", 1000);
         final float factor = url.getParameter("cache.evictionFactor", 0.75f);
         this.store = new LFUCache(max, factor);
@@ -81,5 +81,4 @@ public class LfuCache implements Cache {
     public Object get(Object key) {
         return store.get(key);
     }
-
 }

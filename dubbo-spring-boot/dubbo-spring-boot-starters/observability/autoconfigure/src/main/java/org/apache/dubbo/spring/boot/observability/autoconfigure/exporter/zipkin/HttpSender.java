@@ -14,17 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.dubbo.spring.boot.observability.autoconfigure.exporter.zipkin;
-
-import org.springframework.http.HttpHeaders;
-import org.springframework.util.unit.DataSize;
-import zipkin2.Call;
-import zipkin2.CheckResult;
-import zipkin2.codec.Encoding;
-import zipkin2.reporter.BytesMessageEncoder;
-import zipkin2.reporter.ClosedSenderException;
-import zipkin2.reporter.Sender;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -32,6 +22,15 @@ import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.zip.GZIPOutputStream;
+
+import org.springframework.http.HttpHeaders;
+import org.springframework.util.unit.DataSize;
+import zipkin2.reporter.BytesMessageEncoder;
+import zipkin2.reporter.Call;
+import zipkin2.reporter.CheckResult;
+import zipkin2.reporter.ClosedSenderException;
+import zipkin2.reporter.Encoding;
+import zipkin2.reporter.Sender;
 
 /**
  * A Zipkin {@link Sender} that uses an HTTP client to send JSON spans. Supports automatic compression with gzip.
@@ -140,6 +139,5 @@ abstract class HttpSender extends Sender {
             }
             return result.toByteArray();
         }
-
     }
 }

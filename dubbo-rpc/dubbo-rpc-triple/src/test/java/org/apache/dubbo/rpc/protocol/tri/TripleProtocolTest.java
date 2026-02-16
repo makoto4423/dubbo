@@ -14,10 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.dubbo.rpc.protocol.tri;
 
 import org.apache.dubbo.common.URL;
+import org.apache.dubbo.common.extension.ExtensionLoader;
 import org.apache.dubbo.common.stream.StreamObserver;
 import org.apache.dubbo.common.utils.ClassUtils;
 import org.apache.dubbo.common.utils.NetUtils;
@@ -34,13 +34,15 @@ import org.apache.dubbo.rpc.model.ServiceMetadata;
 import org.apache.dubbo.rpc.protocol.tri.support.IGreeter;
 import org.apache.dubbo.rpc.protocol.tri.support.IGreeterImpl;
 import org.apache.dubbo.rpc.protocol.tri.support.MockStreamObserver;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.apache.dubbo.rpc.service.EchoService;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.apache.dubbo.rpc.protocol.tri.support.IGreeter.SERVER_MSG;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
+import static org.apache.dubbo.rpc.protocol.tri.support.IGreeter.SERVER_MSG;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class TripleProtocolTest {
 
@@ -51,43 +53,39 @@ class TripleProtocolTest {
         int availablePort = NetUtils.getAvailablePort();
         ApplicationModel applicationModel = ApplicationModel.defaultModel();
 
-        URL providerUrl = URL.valueOf(
-            "tri://127.0.0.1:" + availablePort + "/" + IGreeter.class.getName());
+        URL providerUrl = URL.valueOf("tri://127.0.0.1:" + availablePort + "/" + IGreeter.class.getName());
 
-        ModuleServiceRepository serviceRepository = applicationModel.getDefaultModule()
-            .getServiceRepository();
+        ModuleServiceRepository serviceRepository =
+                applicationModel.getDefaultModule().getServiceRepository();
         ServiceDescriptor serviceDescriptor = serviceRepository.registerService(IGreeter.class);
 
         ProviderModel providerModel = new ProviderModel(
-            providerUrl.getServiceKey(),
-            serviceImpl,
-            serviceDescriptor,
-            new ServiceMetadata(), ClassUtils.getClassLoader(IGreeter.class));
+                providerUrl.getServiceKey(),
+                serviceImpl,
+                serviceDescriptor,
+                new ServiceMetadata(),
+                ClassUtils.getClassLoader(IGreeter.class));
         serviceRepository.registerProvider(providerModel);
         providerUrl = providerUrl.setServiceModel(providerModel);
 
-        Protocol protocol = new TripleProtocol(providerUrl.getOrDefaultFrameworkModel());
-        ProxyFactory proxy = applicationModel.getExtensionLoader(ProxyFactory.class)
-            .getAdaptiveExtension();
+        Protocol protocol = ExtensionLoader.getExtensionLoader(Protocol.class).getExtension("tri");
+
+        ProxyFactory proxy =
+                applicationModel.getExtensionLoader(ProxyFactory.class).getAdaptiveExtension();
         Invoker<IGreeter> invoker = proxy.getInvoker(serviceImpl, IGreeter.class, providerUrl);
         Exporter<IGreeter> export = protocol.export(invoker);
 
-        URL consumerUrl = URL.valueOf(
-            "tri://127.0.0.1:" + availablePort + "/" + IGreeter.class.getName());
+        URL consumerUrl = URL.valueOf("tri://127.0.0.1:" + availablePort + "/" + IGreeter.class.getName());
 
-        ConsumerModel consumerModel = new ConsumerModel(consumerUrl.getServiceKey(), null,
-            serviceDescriptor, null,
-            null, null);
+        ConsumerModel consumerModel =
+                new ConsumerModel(consumerUrl.getServiceKey(), null, serviceDescriptor, null, null, null);
         consumerUrl = consumerUrl.setServiceModel(consumerModel);
         IGreeter greeterProxy = proxy.getProxy(protocol.refer(IGreeter.class, consumerUrl));
         Thread.sleep(1000);
 
         // 1. test unaryStream
         String REQUEST_MSG = "hello world";
-        Integer REQUEST_INT = 1024;
-        greeterProxy.echo();
         Assertions.assertEquals(REQUEST_MSG, greeterProxy.echo(REQUEST_MSG));
-        Assertions.assertEquals(REQUEST_INT, greeterProxy.echo(REQUEST_INT));
         Assertions.assertEquals(REQUEST_MSG, serviceImpl.echoAsync(REQUEST_MSG).get());
 
         // 2. test serverStream
@@ -99,8 +97,7 @@ class TripleProtocolTest {
 
         // 3. test bidirectionalStream
         MockStreamObserver outboundMessageSubscriber2 = new MockStreamObserver();
-        StreamObserver<String> inboundMessageObserver = greeterProxy.bidirectionalStream(
-            outboundMessageSubscriber2);
+        StreamObserver<String> inboundMessageObserver = greeterProxy.bidirectionalStream(outboundMessageSubscriber2);
         inboundMessageObserver.onNext(REQUEST_MSG);
         inboundMessageObserver.onCompleted();
         outboundMessageSubscriber2.getLatch().await(3000, TimeUnit.MILLISECONDS);
@@ -108,10 +105,16 @@ class TripleProtocolTest {
         Assertions.assertEquals(outboundMessageSubscriber2.getOnNextData(), SERVER_MSG);
         Assertions.assertTrue(outboundMessageSubscriber2.isOnCompleted());
         // verify server
-        MockStreamObserver serverOutboundMessageSubscriber = (MockStreamObserver) ((IGreeterImpl) serviceImpl).getMockStreamObserver();
+        MockStreamObserver serverOutboundMessageSubscriber =
+                (MockStreamObserver) ((IGreeterImpl) serviceImpl).getMockStreamObserver();
         serverOutboundMessageSubscriber.getLatch().await(1000, TimeUnit.MILLISECONDS);
         Assertions.assertEquals(REQUEST_MSG, serverOutboundMessageSubscriber.getOnNextData());
         Assertions.assertTrue(serverOutboundMessageSubscriber.isOnCompleted());
+
+        EchoService echo = proxy.getProxy(protocol.refer(EchoService.class, consumerUrl));
+        assertEquals(echo.$echo("test"), "test");
+        assertEquals(echo.$echo("abcdefg"), "abcdefg");
+        assertEquals(echo.$echo(1234), 1234);
 
         export.unexport();
         protocol.destroy();
@@ -119,6 +122,4 @@ class TripleProtocolTest {
         serviceRepository.destroy();
         System.out.println("serviceRepository destroyed");
     }
-
-
 }

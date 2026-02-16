@@ -158,7 +158,7 @@ public class ExpiringMap<K, V> implements Map<K, V> {
 
     @Override
     public Collection<V> values() {
-        List<V> list = new ArrayList<V>();
+        List<V> list = new ArrayList<>();
         Set<Entry<K, ExpiryObject>> delegatedSet = delegateMap.entrySet();
         for (Entry<K, ExpiryObject> entry : delegatedSet) {
             ExpiryObject value = entry.getValue();
@@ -194,10 +194,9 @@ public class ExpiringMap<K, V> implements Map<K, V> {
 
     @Override
     public String toString() {
-        return "ExpiringMap{" +
-                "delegateMap=" + delegateMap.toString() +
-                ", expireThread=" + expireThread.toString() +
-                '}';
+        return "ExpiringMap{" + "delegateMap="
+                + delegateMap.toString() + ", expireThread="
+                + expireThread.toString() + '}';
     }
 
     /**
@@ -248,11 +247,7 @@ public class ExpiringMap<K, V> implements Map<K, V> {
 
         @Override
         public String toString() {
-            return "ExpiryObject{" +
-                    "key=" + key +
-                    ", value=" + value +
-                    ", lastAccessTime=" + lastAccessTime +
-                    '}';
+            return "ExpiryObject{" + "key=" + key + ", value=" + value + ", lastAccessTime=" + lastAccessTime + '}';
         }
     }
 
@@ -267,12 +262,11 @@ public class ExpiringMap<K, V> implements Map<K, V> {
 
         @Override
         public String toString() {
-            return "ExpireThread{" +
-                    ", timeToLiveMillis=" + timeToLiveMillis +
-                    ", expirationIntervalMillis=" + expirationIntervalMillis +
-                    ", running=" + running +
-                    ", expirerThread=" + expirerThread +
-                    '}';
+            return "ExpireThread{" + ", timeToLiveMillis="
+                    + timeToLiveMillis + ", expirationIntervalMillis="
+                    + expirationIntervalMillis + ", running="
+                    + running + ", expirerThread="
+                    + expirerThread + '}';
         }
 
         public ExpireThread() {
@@ -381,6 +375,3 @@ public class ExpiringMap<K, V> implements Map<K, V> {
         }
     }
 }
-
-
-

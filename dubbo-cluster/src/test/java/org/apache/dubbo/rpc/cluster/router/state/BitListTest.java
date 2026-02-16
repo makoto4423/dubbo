@@ -16,16 +16,18 @@
  */
 package org.apache.dubbo.rpc.cluster.router.state;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.provider.ValueSource;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class BitListTest {
     @Test
@@ -151,7 +153,6 @@ class BitListTest {
 
         Assertions.assertEquals(3, bitList1.size());
         Assertions.assertFalse(bitList1.hasMoreElementInTailList());
-
 
         bitList1.addAll(bitList2);
 
@@ -353,7 +354,10 @@ class BitListTest {
     }
 
     @Test
-    @ValueSource(ints = {2, })
+    @ValueSource(
+            ints = {
+                2,
+            })
     void testListIterator2() {
         List<String> list = Arrays.asList("A", "B", "C", "D", "E");
         BitList<String> bitList = new BitList<>(list);
@@ -434,7 +438,6 @@ class BitListTest {
         }
 
         Assertions.assertEquals(expectedResult, bitList);
-
 
         while (listIterator.hasPrevious()) {
             Assertions.assertEquals(expectedIterator.previousIndex(), listIterator.previousIndex());
@@ -574,5 +577,45 @@ class BitListTest {
 
         set.add(new LinkedList<>(Arrays.asList("A", "B", "C", "D", "E", "F", "G")));
         Assertions.assertEquals(2, set.size());
+    }
+
+    @Test
+    void testConcurrent() throws InterruptedException {
+        for (int i = 0; i < 100000; i++) {
+            BitList<String> bitList = new BitList<>(Collections.singletonList("test"));
+            bitList.remove("test");
+
+            CountDownLatch countDownLatch = new CountDownLatch(1);
+            CountDownLatch countDownLatch2 = new CountDownLatch(2);
+
+            Thread thread1 = new Thread(() -> {
+                try {
+                    countDownLatch.await();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                bitList.add("test");
+                countDownLatch2.countDown();
+            });
+
+            AtomicReference<BitList<String>> ref = new AtomicReference<>();
+            Thread thread2 = new Thread(() -> {
+                try {
+                    countDownLatch.await();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                ref.set(bitList.clone());
+                countDownLatch2.countDown();
+            });
+
+            thread1.start();
+            thread2.start();
+
+            countDownLatch.countDown();
+            countDownLatch2.await();
+
+            Assertions.assertDoesNotThrow(() -> ref.get().iterator().hasNext());
+        }
     }
 }

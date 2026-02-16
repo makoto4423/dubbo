@@ -16,15 +16,17 @@
  */
 package org.apache.dubbo.rpc.protocol.rest;
 
+import org.apache.dubbo.metadata.rest.ArgInfo;
 import org.apache.dubbo.metadata.rest.media.MediaType;
 import org.apache.dubbo.rpc.protocol.rest.message.HttpMessageCodecManager;
 import org.apache.dubbo.rpc.protocol.rest.message.codec.XMLCodec;
 import org.apache.dubbo.rpc.protocol.rest.pair.MessageCodecResultPair;
 import org.apache.dubbo.rpc.protocol.rest.rest.RegistrationResult;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class HttpMessageCodecManagerTest {
 
@@ -34,15 +36,20 @@ public class HttpMessageCodecManagerTest {
 
         RegistrationResult registrationResult = new RegistrationResult();
         registrationResult.setId(1l);
-        HttpMessageCodecManager.httpMessageEncode(byteArrayOutputStream,
-            registrationResult, null, MediaType.TEXT_XML, null);
+        HttpMessageCodecManager.httpMessageEncode(
+                byteArrayOutputStream, registrationResult, null, MediaType.TEXT_XML, null);
 
-        Object o = HttpMessageCodecManager.httpMessageDecode(byteArrayOutputStream.toByteArray(), RegistrationResult.class, RegistrationResult.class, MediaType.TEXT_XML);
+        ArgInfo argInfo = new ArgInfo();
+        argInfo.setActualType(RegistrationResult.class);
+        argInfo.setParamType(RegistrationResult.class);
+        Object o = HttpMessageCodecManager.httpMessageDecode(
+                byteArrayOutputStream.toByteArray(), argInfo, MediaType.TEXT_XML);
 
         Assertions.assertEquals(registrationResult, o);
 
         byteArrayOutputStream = new ByteArrayOutputStream();
-        MessageCodecResultPair messageCodecResultPair = HttpMessageCodecManager.httpMessageEncode(byteArrayOutputStream, null, null, null, RegistrationResult.class);
+        MessageCodecResultPair messageCodecResultPair = HttpMessageCodecManager.httpMessageEncode(
+                byteArrayOutputStream, null, null, null, RegistrationResult.class);
 
         MediaType mediaType = messageCodecResultPair.getMediaType();
 
@@ -51,7 +58,5 @@ public class HttpMessageCodecManagerTest {
         XMLCodec xmlCodec = new XMLCodec();
 
         Assertions.assertEquals(false, xmlCodec.typeSupport(null));
-
-
     }
 }

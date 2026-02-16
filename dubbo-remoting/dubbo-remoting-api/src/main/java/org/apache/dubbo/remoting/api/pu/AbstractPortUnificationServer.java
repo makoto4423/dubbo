@@ -17,17 +17,23 @@
 package org.apache.dubbo.remoting.api.pu;
 
 import org.apache.dubbo.common.URL;
+import org.apache.dubbo.common.extension.ExtensionLoader;
 import org.apache.dubbo.remoting.ChannelHandler;
 import org.apache.dubbo.remoting.RemotingException;
 import org.apache.dubbo.remoting.api.WireProtocol;
 import org.apache.dubbo.remoting.transport.AbstractServer;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public abstract class AbstractPortUnificationServer extends AbstractServer {
-    private final List<WireProtocol> protocols;
+
+    /**
+     * extension name -> activate WireProtocol
+     */
+    private volatile Map<String, WireProtocol> protocols;
 
     /*
     protocol name --> URL object
@@ -44,12 +50,23 @@ public abstract class AbstractPortUnificationServer extends AbstractServer {
 
     public AbstractPortUnificationServer(URL url, ChannelHandler handler) throws RemotingException {
         super(url, handler);
-        this.protocols = url.getOrDefaultFrameworkModel().getExtensionLoader(WireProtocol.class).getActivateExtension(url, new String[0]);
     }
 
-    public List<WireProtocol> getProtocols() {
+    public Map<String, WireProtocol> getProtocols() {
         return protocols;
     }
+
+    @Override
+    protected final void doOpen() {
+        ExtensionLoader<WireProtocol> extensionLoader =
+                getUrl().getOrDefaultFrameworkModel().getExtensionLoader(WireProtocol.class);
+        this.protocols = extensionLoader.getActivateExtension(getUrl(), new String[0]).stream()
+                .collect(Collectors.toConcurrentMap(extensionLoader::getExtensionName, Function.identity()));
+
+        doOpen0();
+    }
+
+    protected abstract void doOpen0();
 
     /*
     This method registers URL object and corresponding channel handler to pu server.

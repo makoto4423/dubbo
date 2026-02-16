@@ -16,17 +16,18 @@
  */
 package org.apache.dubbo.common.bytecode;
 
-import javassist.ClassPool;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import javassist.ClassPool;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 interface Builder<T> {
     T getName(Bean bean);
@@ -36,9 +37,7 @@ interface Builder<T> {
 
 class BaseClass {
 
-    public BaseClass() {
-
-    }
+    public BaseClass() {}
 
     public BaseClass(StringBuilder sb) {
         sb.append("constructor comes from BaseClass");
@@ -49,9 +48,8 @@ class BaseClass {
     }
 }
 
-interface BaseInterface {
+interface BaseInterface {}
 
-}
 class ClassGeneratorTest {
 
     @Test
@@ -59,26 +57,56 @@ class ClassGeneratorTest {
         ClassGenerator cg = ClassGenerator.newInstance();
 
         // add className, interface, superClass
-        String className = BaseClass.class.getPackage().getName() + ".TestClass";
+        String className = BaseClass.class.getPackage().getName() + ".TestClass"
+                + UUID.randomUUID().toString().replace("-", "");
         cg.setClassName(className);
         cg.addInterface(BaseInterface.class);
         cg.setSuperClass(BaseClass.class);
 
         // add constructor
         cg.addDefaultConstructor();
-        cg.addConstructor(Modifier.PUBLIC, new Class[]{String.class, int.class}, new Class[]{Throwable.class, RuntimeException.class}, "this.strAttr = arg0;this.intAttr = arg1;");
+        cg.addConstructor(
+                Modifier.PUBLIC,
+                new Class[] {String.class, int.class},
+                new Class[] {Throwable.class, RuntimeException.class},
+                "this.strAttr = arg0;this.intAttr = arg1;");
         cg.addConstructor(BaseClass.class.getConstructor(StringBuilder.class));
 
         // add field
-        cg.addField("staticAttr", Modifier.PUBLIC | Modifier.STATIC | Modifier.VOLATILE, String.class, "\"defaultVal\"");
+        cg.addField(
+                "staticAttr", Modifier.PUBLIC | Modifier.STATIC | Modifier.VOLATILE, String.class, "\"defaultVal\"");
         cg.addField("strAttr", Modifier.PROTECTED | Modifier.VOLATILE, String.class);
         cg.addField("intAttr", Modifier.PRIVATE | Modifier.VOLATILE, int.class);
 
         // add method
-        cg.addMethod("setStrAttr", Modifier.PUBLIC, void.class, new Class[]{String.class, int.class}, new Class[]{Throwable.class, RuntimeException.class}, "this.strAttr = arg0;");
-        cg.addMethod("setIntAttr", Modifier.PUBLIC, void.class, new Class[]{String.class, int.class}, new Class[]{Throwable.class, RuntimeException.class}, "this.intAttr = arg1;");
-        cg.addMethod("getStrAttr", Modifier.PUBLIC, String.class, new Class[]{}, new Class[]{Throwable.class, RuntimeException.class}, "return this.strAttr;");
-        cg.addMethod("getIntAttr", Modifier.PUBLIC, int.class, new Class[]{}, new Class[]{Throwable.class, RuntimeException.class}, "return this.intAttr;");
+        cg.addMethod(
+                "setStrAttr",
+                Modifier.PUBLIC,
+                void.class,
+                new Class[] {String.class, int.class},
+                new Class[] {Throwable.class, RuntimeException.class},
+                "this.strAttr = arg0;");
+        cg.addMethod(
+                "setIntAttr",
+                Modifier.PUBLIC,
+                void.class,
+                new Class[] {String.class, int.class},
+                new Class[] {Throwable.class, RuntimeException.class},
+                "this.intAttr = arg1;");
+        cg.addMethod(
+                "getStrAttr",
+                Modifier.PUBLIC,
+                String.class,
+                new Class[] {},
+                new Class[] {Throwable.class, RuntimeException.class},
+                "return this.strAttr;");
+        cg.addMethod(
+                "getIntAttr",
+                Modifier.PUBLIC,
+                int.class,
+                new Class[] {},
+                new Class[] {Throwable.class, RuntimeException.class},
+                "return this.intAttr;");
         cg.addMethod(BaseClass.class.getMethod("baseClassMethod"));
 
         // cg.toClass
@@ -90,16 +118,17 @@ class ClassGeneratorTest {
         Assertions.assertTrue(ClassGenerator.isDynamicClass(clz));
         Assertions.assertEquals(clz.getName(), className);
         Assertions.assertEquals(clz.getSuperclass(), BaseClass.class);
-        Assertions.assertArrayEquals(clz.getInterfaces(), new Class[]{ClassGenerator.DC.class, BaseInterface.class});
+        Assertions.assertArrayEquals(clz.getInterfaces(), new Class[] {ClassGenerator.DC.class, BaseInterface.class});
 
         // get constructors
         Constructor<?>[] constructors = clz.getConstructors();
         Assertions.assertEquals(constructors.length, 3);
         Constructor<?> constructor0 = clz.getConstructor();
-        Constructor<?> constructor1 = clz.getConstructor(new Class[]{String.class, int.class});
-        Constructor<?> constructor2 = clz.getConstructor(new Class[]{StringBuilder.class});
+        Constructor<?> constructor1 = clz.getConstructor(new Class[] {String.class, int.class});
+        Constructor<?> constructor2 = clz.getConstructor(new Class[] {StringBuilder.class});
         Assertions.assertEquals(constructor1.getModifiers(), Modifier.PUBLIC);
-        Assertions.assertArrayEquals(constructor1.getExceptionTypes(), new Class[]{Throwable.class, RuntimeException.class});
+        Assertions.assertArrayEquals(
+                constructor1.getExceptionTypes(), new Class[] {Throwable.class, RuntimeException.class});
 
         // get fields
         Field staticAttrField = clz.getDeclaredField("staticAttr");
@@ -111,8 +140,8 @@ class ClassGeneratorTest {
         Assertions.assertEquals(staticAttrField.get(null), "defaultVal");
 
         // get methods
-        Method setStrAttrMethod = clz.getMethod("setStrAttr", new Class[]{String.class, int.class});
-        Method setIntAttrMethod = clz.getMethod("setIntAttr", new Class[]{String.class, int.class});
+        Method setStrAttrMethod = clz.getMethod("setStrAttr", new Class[] {String.class, int.class});
+        Method setIntAttrMethod = clz.getMethod("setIntAttr", new Class[] {String.class, int.class});
         Method getStrAttrMethod = clz.getMethod("getStrAttr");
         Method getIntAttrMethod = clz.getMethod("getIntAttr");
         Method baseClassMethod = clz.getMethod("baseClassMethod");
@@ -141,10 +170,10 @@ class ClassGeneratorTest {
         // verify constructor and method witch comes from baseClass
         StringBuilder sb = new StringBuilder();
         Object objByConstructor2 = constructor2.newInstance(sb);
-        Assertions.assertEquals(sb.toString(),"constructor comes from BaseClass");
+        Assertions.assertEquals(sb.toString(), "constructor comes from BaseClass");
 
         Object res = baseClassMethod.invoke(objByConstructor2);
-        Assertions.assertEquals(res,"method comes from BaseClass");
+        Assertions.assertEquals(res, "method comes from BaseClass");
 
         cg.release();
     }
@@ -157,12 +186,13 @@ class ClassGeneratorTest {
         fname.setAccessible(true);
 
         ClassGenerator cg = ClassGenerator.newInstance();
-        cg.setClassName(Bean.class.getName() + "$Builder");
+        cg.setClassName(Bean.class.getName() + "$Builder" + UUID.randomUUID().toString());
         cg.addInterface(Builder.class);
 
         cg.addField("public static java.lang.reflect.Field FNAME;");
 
-        cg.addMethod("public Object getName(" + Bean.class.getName() + " o){ boolean[][][] bs = new boolean[0][][]; return (String)FNAME.get($1); }");
+        cg.addMethod("public Object getName(" + Bean.class.getName()
+                + " o){ boolean[][][] bs = new boolean[0][][]; return (String)FNAME.get($1); }");
         cg.addMethod("public void setName(" + Bean.class.getName() + " o, Object name){ FNAME.set($1, $2); }");
 
         cg.addDefaultConstructor();
@@ -183,12 +213,13 @@ class ClassGeneratorTest {
         fname.setAccessible(true);
 
         ClassGenerator cg = ClassGenerator.newInstance();
-        cg.setClassName(Bean.class.getName() + "$Builder2");
+        cg.setClassName(Bean.class.getName() + "$Builder2" + UUID.randomUUID().toString());
         cg.addInterface(Builder.class);
 
         cg.addField("FNAME", Modifier.PUBLIC | Modifier.STATIC, java.lang.reflect.Field.class);
 
-        cg.addMethod("public Object getName(" + Bean.class.getName() + " o){ boolean[][][] bs = new boolean[0][][]; return (String)FNAME.get($1); }");
+        cg.addMethod("public Object getName(" + Bean.class.getName()
+                + " o){ boolean[][][] bs = new boolean[0][][]; return (String)FNAME.get($1); }");
         cg.addMethod("public void setName(" + Bean.class.getName() + " o, Object name){ FNAME.set($1, $2); }");
 
         cg.addDefaultConstructor();
@@ -210,15 +241,16 @@ class ClassGeneratorTest {
         List<Integer> hashCodeList = new ArrayList<>();
         for (int i = 0; i < threadCount; i++) {
             new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    ClassPool classPool = ClassGenerator.getClassPool(loader);
-                    int currentHashCode = classPool.hashCode();
-                    hashCodeList.add(currentHashCode);
-                    System.out.println(currentHashCode);
-                    LATCH.countDown();
-                }
-            }).start();
+                        @Override
+                        public void run() {
+                            ClassPool classPool = ClassGenerator.getClassPool(loader);
+                            int currentHashCode = classPool.hashCode();
+                            hashCodeList.add(currentHashCode);
+                            System.out.println(currentHashCode);
+                            LATCH.countDown();
+                        }
+                    })
+                    .start();
         }
         LATCH.await();
         Integer firstHashCode = null;

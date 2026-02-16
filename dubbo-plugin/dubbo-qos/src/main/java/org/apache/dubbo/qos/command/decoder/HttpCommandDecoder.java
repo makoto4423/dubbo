@@ -16,18 +16,19 @@
  */
 package org.apache.dubbo.qos.command.decoder;
 
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.QueryStringDecoder;
-import io.netty.handler.codec.http.multipart.Attribute;
-import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
-import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import org.apache.dubbo.qos.api.CommandContext;
 import org.apache.dubbo.qos.command.CommandContextFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.QueryStringDecoder;
+import io.netty.handler.codec.http.multipart.Attribute;
+import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
+import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 
 public class HttpCommandDecoder {
     public static CommandContext decode(HttpRequest request) {
@@ -45,15 +46,17 @@ public class HttpCommandDecoder {
                         commandContext = CommandContextFactory.newInstance(name);
                         commandContext.setHttp(true);
                     } else {
-                        List<String> valueList = new ArrayList<String>();
-                        for (List<String> values : queryStringDecoder.parameters().values()) {
+                        List<String> valueList = new ArrayList<>();
+                        for (List<String> values :
+                                queryStringDecoder.parameters().values()) {
                             valueList.addAll(values);
                         }
-                        commandContext = CommandContextFactory.newInstance(name, valueList.toArray(new String[]{}), true);
+                        commandContext =
+                                CommandContextFactory.newInstance(name, valueList.toArray(new String[] {}), true);
                     }
                 } else if (request.method() == HttpMethod.POST) {
                     HttpPostRequestDecoder httpPostRequestDecoder = new HttpPostRequestDecoder(request);
-                    List<String> valueList = new ArrayList<String>();
+                    List<String> valueList = new ArrayList<>();
                     for (InterfaceHttpData interfaceHttpData : httpPostRequestDecoder.getBodyHttpDatas()) {
                         if (interfaceHttpData.getHttpDataType() == InterfaceHttpData.HttpDataType.Attribute) {
                             Attribute attribute = (Attribute) interfaceHttpData;
@@ -68,18 +71,18 @@ public class HttpCommandDecoder {
                         commandContext = CommandContextFactory.newInstance(name);
                         commandContext.setHttp(true);
                     } else {
-                        commandContext = CommandContextFactory.newInstance(name, valueList.toArray(new String[]{}), true);
+                        commandContext =
+                                CommandContextFactory.newInstance(name, valueList.toArray(new String[] {}), true);
                     }
                 }
             } else if (array.length == 3) {
                 String name = array[1];
                 String appName = array[2];
                 if (request.method() == HttpMethod.GET) {
-                    commandContext = CommandContextFactory.newInstance(name, new String[]{appName}, true);
+                    commandContext = CommandContextFactory.newInstance(name, new String[] {appName}, true);
                     commandContext.setHttp(true);
                 }
             }
-
         }
 
         return commandContext;

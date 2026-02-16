@@ -29,10 +29,12 @@ import java.util.concurrent.locks.ReentrantLock;
 import static org.apache.dubbo.common.constants.CommonConstants.CHECK_KEY;
 import static org.apache.dubbo.common.constants.LoggerCodeConstants.COMMON_UNEXPECTED_EXCEPTION;
 import static org.apache.dubbo.common.constants.LoggerCodeConstants.PROXY_FAILED_EXPORT_SERVICE;
+import static org.apache.dubbo.metadata.MetadataConstants.NAMESPACE_KEY;
 
 public abstract class AbstractMetadataReportFactory implements MetadataReportFactory {
 
-    private static final ErrorTypeAwareLogger logger = LoggerFactory.getErrorTypeAwareLogger(AbstractMetadataReportFactory.class);
+    private static final ErrorTypeAwareLogger logger =
+            LoggerFactory.getErrorTypeAwareLogger(AbstractMetadataReportFactory.class);
     private static final String EXPORT_KEY = "export";
     private static final String REFER_KEY = "refer";
 
@@ -48,9 +50,8 @@ public abstract class AbstractMetadataReportFactory implements MetadataReportFac
 
     @Override
     public MetadataReport getMetadataReport(URL url) {
-        url = url.setPath(MetadataReport.class.getName())
-            .removeParameters(EXPORT_KEY, REFER_KEY);
-        String key = url.toServiceString();
+        url = url.setPath(MetadataReport.class.getName()).removeParameters(EXPORT_KEY, REFER_KEY);
+        String key = url.toServiceString(NAMESPACE_KEY);
 
         MetadataReport metadataReport = serviceStoreMap.get(key);
         if (metadataReport != null) {

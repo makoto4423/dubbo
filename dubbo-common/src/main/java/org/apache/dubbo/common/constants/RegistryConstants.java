@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.dubbo.common.constants;
 
 public interface RegistryConstants {
@@ -144,4 +143,10 @@ public interface RegistryConstants {
     boolean DEFAULT_ENABLE_EMPTY_PROTECTION = false;
     String REGISTER_CONSUMER_URL_KEY = "register-consumer-url";
 
+    /**
+     * export noting suffix servicename
+     * by default, dubbo export servicename is "${interface}:${version}:", this servicename with ':' suffix
+     * for compatible, we should export noting suffix servicename, eg: ${interface}:${version}
+     */
+    String NACOE_REGISTER_COMPATIBLE = "nacos.register-compatible";
 }

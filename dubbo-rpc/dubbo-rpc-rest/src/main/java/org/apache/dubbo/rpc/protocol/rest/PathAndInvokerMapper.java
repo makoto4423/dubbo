@@ -34,10 +34,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * save the path & metadata info mapping
  */
 public class PathAndInvokerMapper {
-    private static final ErrorTypeAwareLogger logger = LoggerFactory.getErrorTypeAwareLogger(PathAndInvokerMapper.class);
+    private static final ErrorTypeAwareLogger logger =
+            LoggerFactory.getErrorTypeAwareLogger(PathAndInvokerMapper.class);
 
-    private final Map<PathMatcher, InvokerAndRestMethodMetadataPair> pathToServiceMapContainPathVariable = new ConcurrentHashMap<>();
-    private final Map<PathMatcher, InvokerAndRestMethodMetadataPair> pathToServiceMapNoPathVariable = new ConcurrentHashMap<>();
+    private final Map<PathMatcher, InvokerAndRestMethodMetadataPair> pathToServiceMapContainPathVariable =
+            new ConcurrentHashMap<>();
+    private final Map<PathMatcher, InvokerAndRestMethodMetadataPair> pathToServiceMapNoPathVariable =
+            new ConcurrentHashMap<>();
 
     // for http method compare 405
     private final Map<PathMatcher, Set<String>> pathMatcherToHttpMethodMap = new HashMap<>();
@@ -50,16 +53,20 @@ public class PathAndInvokerMapper {
      */
     public void addPathAndInvoker(Map<PathMatcher, RestMethodMetadata> metadataMap, Invoker invoker) {
 
-        metadataMap.entrySet().stream().forEach(entry -> {
-            PathMatcher pathMatcher = entry.getKey();
+        metadataMap.forEach((pathMatcher, value) -> {
             if (pathMatcher.hasPathVariable()) {
-                addPathMatcherToPathMap(pathMatcher, pathToServiceMapContainPathVariable, InvokerAndRestMethodMetadataPair.pair(invoker, entry.getValue()));
+                addPathMatcherToPathMap(
+                        pathMatcher,
+                        pathToServiceMapContainPathVariable,
+                        InvokerAndRestMethodMetadataPair.pair(invoker, value));
             } else {
-                addPathMatcherToPathMap(pathMatcher, pathToServiceMapNoPathVariable, InvokerAndRestMethodMetadataPair.pair(invoker, entry.getValue()));
+                addPathMatcherToPathMap(
+                        pathMatcher,
+                        pathToServiceMapNoPathVariable,
+                        InvokerAndRestMethodMetadataPair.pair(invoker, value));
             }
         });
     }
-
 
     /**
      * get rest method metadata by path matcher
@@ -70,17 +77,14 @@ public class PathAndInvokerMapper {
     public InvokerAndRestMethodMetadataPair getRestMethodMetadata(PathMatcher pathMatcher) {
 
         // first search from pathToServiceMapNoPathVariable
-        if (pathToServiceMapNoPathVariable.containsKey(pathMatcher)) {
-            return pathToServiceMapNoPathVariable.get(pathMatcher);
+        InvokerAndRestMethodMetadataPair pair;
+        pair = pathToServiceMapNoPathVariable.get(pathMatcher);
+        if (pair == null) {
+            // second search from pathToServiceMapContainPathVariable
+            pair = pathToServiceMapContainPathVariable.get(pathMatcher);
         }
 
-        // second search from pathToServiceMapContainPathVariable
-        if (pathToServiceMapContainPathVariable.containsKey(pathMatcher)) {
-            return pathToServiceMapContainPathVariable.get(pathMatcher);
-        }
-
-        return null;
-
+        return pair;
     }
 
     /**
@@ -90,32 +94,37 @@ public class PathAndInvokerMapper {
      */
     public void removePath(PathMatcher pathMatcher) {
 
-        InvokerAndRestMethodMetadataPair containPathVariablePair = pathToServiceMapContainPathVariable.remove(pathMatcher);
+        InvokerAndRestMethodMetadataPair containPathVariablePair =
+                pathToServiceMapContainPathVariable.remove(pathMatcher);
 
         InvokerAndRestMethodMetadataPair unContainPathVariablePair = pathToServiceMapNoPathVariable.remove(pathMatcher);
         logger.info("dubbo rest undeploy pathMatcher:" + pathMatcher
-            + ", and path variable method is :" + (containPathVariablePair == null ? null : containPathVariablePair.getRestMethodMetadata().getReflectMethod())
-            + ", and no path variable  method is :" + (unContainPathVariablePair == null ? null : unContainPathVariablePair.getRestMethodMetadata().getReflectMethod()));
-
-
+                + ", and path variable method is :"
+                + (containPathVariablePair == null
+                        ? null
+                        : containPathVariablePair.getRestMethodMetadata().getReflectMethod())
+                + ", and no path variable  method is :"
+                + (unContainPathVariablePair == null
+                        ? null
+                        : unContainPathVariablePair.getRestMethodMetadata().getReflectMethod()));
     }
 
-    public void addPathMatcherToPathMap(PathMatcher pathMatcher,
-                                        Map<PathMatcher, InvokerAndRestMethodMetadataPair> pathMatcherPairMap,
-                                        InvokerAndRestMethodMetadataPair invokerRestMethodMetadataPair) {
+    public void addPathMatcherToPathMap(
+            PathMatcher pathMatcher,
+            Map<PathMatcher, InvokerAndRestMethodMetadataPair> pathMatcherPairMap,
+            InvokerAndRestMethodMetadataPair invokerRestMethodMetadataPair) {
 
-        if (pathMatcherPairMap.containsKey(pathMatcher)) {
-
-            // cover the old service metadata when  current interface is old interface & current method desc equals old`s method desc,else ,throw double check exception
-
-            InvokerAndRestMethodMetadataPair beforeMetadata = pathMatcherPairMap.get(pathMatcher);
+        InvokerAndRestMethodMetadataPair beforeMetadata = pathMatcherPairMap.get(pathMatcher);
+        if (beforeMetadata != null) {
+            // cover the old service metadata when current interface is old interface & current method desc equals
+            // old`s method desc,else ,throw double check exception
             // true when reExport
             if (!invokerRestMethodMetadataPair.compareServiceMethod(beforeMetadata)) {
-                throw new DoublePathCheckException(
-                    "dubbo rest double path check error, current path is: " + pathMatcher
-                        + " ,and service method is: " + invokerRestMethodMetadataPair.getRestMethodMetadata().getReflectMethod()
-                        + "before service  method is: " + beforeMetadata.getRestMethodMetadata().getReflectMethod()
-                );
+                throw new DoublePathCheckException("dubbo rest double path check error, current path is: " + pathMatcher
+                        + " ,and service method is: "
+                        + invokerRestMethodMetadataPair.getRestMethodMetadata().getReflectMethod()
+                        + "before service  method is: "
+                        + beforeMetadata.getRestMethodMetadata().getReflectMethod());
             }
         }
 
@@ -123,27 +132,22 @@ public class PathAndInvokerMapper {
 
         addPathMatcherToHttpMethodsMap(pathMatcher);
 
-
-        logger.info("dubbo rest deploy pathMatcher:" + pathMatcher + ", and service method is :" + invokerRestMethodMetadataPair.getRestMethodMetadata().getReflectMethod());
+        logger.info("dubbo rest deploy pathMatcher:" + pathMatcher + ", and service method is :"
+                + invokerRestMethodMetadataPair.getRestMethodMetadata().getReflectMethod());
     }
 
     private void addPathMatcherToHttpMethodsMap(PathMatcher pathMatcher) {
 
         PathMatcher newPathMatcher = PathMatcher.convertPathMatcher(pathMatcher);
 
-        if (!pathMatcherToHttpMethodMap.containsKey(newPathMatcher)) {
-            HashSet<String> httpMethods = new HashSet<>();
+        Set<String> httpMethods = pathMatcherToHttpMethodMap.computeIfAbsent(newPathMatcher, k -> {
+            HashSet<String> methods = new HashSet<>();
 
-            httpMethods.add(pathMatcher.getHttpMethod());
-
-            pathMatcherToHttpMethodMap.put(newPathMatcher, httpMethods);
-
-        }
-
-        Set<String> httpMethods = pathMatcherToHttpMethodMap.get(newPathMatcher);
+            methods.add(pathMatcher.getHttpMethod());
+            return methods;
+        });
 
         httpMethods.add(newPathMatcher.getHttpMethod());
-
     }
 
     public boolean isHttpMethodAllowed(PathMatcher pathMatcher) {
@@ -153,11 +157,9 @@ public class PathAndInvokerMapper {
             return false;
         }
 
-
         Set<String> httpMethods = pathMatcherToHttpMethodMap.get(newPathMatcher);
 
         return httpMethods.contains(newPathMatcher.getHttpMethod());
-
     }
 
     public String pathHttpMethods(PathMatcher pathMatcher) {
@@ -167,11 +169,8 @@ public class PathAndInvokerMapper {
             return null;
         }
 
-
         Set<String> httpMethods = pathMatcherToHttpMethodMap.get(newPathMatcher);
 
         return httpMethods.toString();
-
     }
-
 }

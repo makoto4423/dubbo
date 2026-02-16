@@ -26,13 +26,14 @@ public class CertManager {
     private final List<CertProvider> certProviders;
 
     public CertManager(FrameworkModel frameworkModel) {
-        this.certProviders = frameworkModel.getExtensionLoader(CertProvider.class).getActivateExtensions();
+        this.certProviders =
+                frameworkModel.getExtensionLoader(CertProvider.class).getActivateExtensions();
     }
 
     public ProviderCert getProviderConnectionConfig(URL localAddress, SocketAddress remoteAddress) {
         for (CertProvider certProvider : certProviders) {
-            if (certProvider.isSupport(localAddress)) {
-                ProviderCert cert = certProvider.getProviderConnectionConfig(localAddress);
+            if (certProvider.isSupport(localAddress, remoteAddress)) {
+                ProviderCert cert = certProvider.getProviderConnectionConfig(localAddress, remoteAddress);
                 if (cert != null) {
                     return cert;
                 }

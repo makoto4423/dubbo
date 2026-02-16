@@ -16,18 +16,14 @@
  */
 package org.apache.dubbo.rpc.protocol.rest.annotation.param.parse.provider;
 
-
 import org.apache.dubbo.rpc.protocol.rest.annotation.BaseParseContext;
 import org.apache.dubbo.rpc.protocol.rest.request.RequestFacade;
 
-
 public class ProviderParseContext extends BaseParseContext {
-
 
     private RequestFacade requestFacade;
     private Object response;
     private Object request;
-
 
     public ProviderParseContext(RequestFacade request) {
         this.requestFacade = request;
@@ -61,10 +57,6 @@ public class ProviderParseContext extends BaseParseContext {
     public String getPathVariable(int urlSplitIndex) {
 
         String[] split = getRequestFacade().getRequestURI().split("/");
-
-        return split[urlSplitIndex];
-
+        return split[urlSplitIndex].split("\\?")[0];
     }
-
-
 }

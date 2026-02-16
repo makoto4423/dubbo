@@ -36,5 +36,4 @@ public interface DeployListener<E extends ScopeModel> {
     void onStopped(E scopeModel);
 
     void onFailure(E scopeModel, Throwable cause);
-
 }

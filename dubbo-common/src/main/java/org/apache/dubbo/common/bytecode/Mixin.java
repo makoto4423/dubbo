@@ -32,8 +32,7 @@ public abstract class Mixin {
     private static final String PACKAGE_NAME = Mixin.class.getPackage().getName();
     private static final AtomicLong MIXIN_CLASS_COUNTER = new AtomicLong(0);
 
-    protected Mixin() {
-    }
+    protected Mixin() {}
 
     /**
      * mixin interface and delegates.
@@ -44,7 +43,7 @@ public abstract class Mixin {
      * @return Mixin instance.
      */
     public static Mixin mixin(Class<?>[] ics, Class<?> dc) {
-        return mixin(ics, new Class[]{dc});
+        return mixin(ics, new Class[] {dc});
     }
 
     /**
@@ -57,7 +56,7 @@ public abstract class Mixin {
      * @return Mixin instance.
      */
     public static Mixin mixin(Class<?>[] ics, Class<?> dc, ClassLoader cl) {
-        return mixin(ics, new Class[]{dc}, cl);
+        return mixin(ics, new Class[] {dc}, cl);
     }
 
     /**
@@ -106,16 +105,22 @@ public abstract class Mixin {
 
                 ccp.addField("private " + dcs[i].getName() + " d" + i + ";");
 
-                code.append('d').append(i).append(" = (").append(dcs[i].getName()).append(")$1[").append(i).append("];\n");
+                code.append('d')
+                        .append(i)
+                        .append(" = (")
+                        .append(dcs[i].getName())
+                        .append(")$1[")
+                        .append(i)
+                        .append("];\n");
                 if (MixinAware.class.isAssignableFrom(dcs[i])) {
                     code.append('d').append(i).append(".setMixinInstance(this);\n");
                 }
             }
-            ccp.addConstructor(Modifier.PUBLIC, new Class<?>[]{Object[].class}, code.toString());
+            ccp.addConstructor(Modifier.PUBLIC, new Class<?>[] {Object[].class}, code.toString());
 
             Class<?> neighbor = null;
             // impl methods.
-            Set<String> worked = new HashSet<String>();
+            Set<String> worked = new HashSet<>();
             for (int i = 0; i < ics.length; i++) {
                 if (!Modifier.isPublic(ics[i].getModifiers())) {
                     String npkg = ics[i].getPackage().getName();
@@ -150,10 +155,20 @@ public abstract class Mixin {
                     Class<?> rt = method.getReturnType();
                     String mn = method.getName();
                     if (Void.TYPE.equals(rt)) {
-                        ccp.addMethod(mn, method.getModifiers(), rt, method.getParameterTypes(), method.getExceptionTypes(),
+                        ccp.addMethod(
+                                mn,
+                                method.getModifiers(),
+                                rt,
+                                method.getParameterTypes(),
+                                method.getExceptionTypes(),
                                 "d" + ix + "." + mn + "($$);");
                     } else {
-                        ccp.addMethod(mn, method.getModifiers(), rt, method.getParameterTypes(), method.getExceptionTypes(),
+                        ccp.addMethod(
+                                mn,
+                                method.getModifiers(),
+                                rt,
+                                method.getParameterTypes(),
+                                method.getExceptionTypes(),
                                 "return ($r)d" + ix + "." + mn + "($$);");
                     }
                 }
@@ -222,7 +237,7 @@ public abstract class Mixin {
      * @param ds delegates instance.
      * @return instance.
      */
-    abstract public Object newInstance(Object[] ds);
+    public abstract Object newInstance(Object[] ds);
 
     public static interface MixinAware {
         void setMixinInstance(Object instance);

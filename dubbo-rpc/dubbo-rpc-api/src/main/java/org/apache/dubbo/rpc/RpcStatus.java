@@ -33,13 +33,12 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class RpcStatus {
 
-    private static final ConcurrentMap<String, RpcStatus> SERVICE_STATISTICS = new ConcurrentHashMap<String,
-        RpcStatus>();
+    private static final ConcurrentMap<String, RpcStatus> SERVICE_STATISTICS = new ConcurrentHashMap<>();
 
     private static final ConcurrentMap<String, ConcurrentMap<String, RpcStatus>> METHOD_STATISTICS =
-        new ConcurrentHashMap<String, ConcurrentMap<String, RpcStatus>>();
+            new ConcurrentHashMap<>();
 
-    private final ConcurrentMap<String, Object> values = new ConcurrentHashMap<String, Object>();
+    private final ConcurrentMap<String, Object> values = new ConcurrentHashMap<>();
 
     private final AtomicInteger active = new AtomicInteger();
     private final AtomicLong total = new AtomicLong();
@@ -50,8 +49,7 @@ public class RpcStatus {
     private final AtomicLong failedMaxElapsed = new AtomicLong();
     private final AtomicLong succeededMaxElapsed = new AtomicLong();
 
-    private RpcStatus() {
-    }
+    private RpcStatus() {}
 
     /**
      * @param url
@@ -77,7 +75,8 @@ public class RpcStatus {
      */
     public static RpcStatus getStatus(URL url, String methodName) {
         String uri = url.toIdentityString();
-        ConcurrentMap<String, RpcStatus> map = ConcurrentHashMapUtils.computeIfAbsent(METHOD_STATISTICS, uri, k -> new ConcurrentHashMap<>());
+        ConcurrentMap<String, RpcStatus> map =
+                ConcurrentHashMapUtils.computeIfAbsent(METHOD_STATISTICS, uri, k -> new ConcurrentHashMap<>());
         return ConcurrentHashMapUtils.computeIfAbsent(map, methodName, k -> new RpcStatus());
     }
 
@@ -316,6 +315,4 @@ public class RpcStatus {
         }
         return getTotal();
     }
-
-
 }

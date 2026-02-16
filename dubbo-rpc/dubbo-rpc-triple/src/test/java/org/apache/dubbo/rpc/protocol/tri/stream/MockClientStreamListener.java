@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.dubbo.rpc.protocol.tri.stream;
 
 import org.apache.dubbo.rpc.TriRpcStatus;
@@ -33,10 +32,12 @@ public class MockClientStreamListener implements ClientStream.Listener {
     }
 
     @Override
-    public void onComplete(TriRpcStatus status,
-        Map<String, Object> attachments) {
+    public void onComplete(TriRpcStatus status, Map<String, Object> attachments) {
         this.status = status;
     }
+
+    @Override
+    public void onClose() {}
 
     @Override
     public void onMessage(byte[] message, boolean isNeedReturnException) {
@@ -44,7 +45,5 @@ public class MockClientStreamListener implements ClientStream.Listener {
     }
 
     @Override
-    public void onCancelByRemote(TriRpcStatus status) {
-
-    }
+    public void onCancelByRemote(TriRpcStatus status) {}
 }

@@ -14,14 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.dubbo.spring.boot.observability.autoconfigure.exporter.zipkin;
 
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.client.RestTemplate;
-import zipkin2.Call;
-import zipkin2.Callback;
+import zipkin2.reporter.Call;
+import zipkin2.reporter.Callback;
 
 class ZipkinRestTemplateSender extends HttpSender {
     private final String endpoint;
@@ -71,6 +70,5 @@ class ZipkinRestTemplateSender extends HttpSender {
                 callback.onError(ex);
             }
         }
-
     }
 }

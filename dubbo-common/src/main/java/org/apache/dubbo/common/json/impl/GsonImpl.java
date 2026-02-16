@@ -16,15 +16,28 @@
  */
 package org.apache.dubbo.common.json.impl;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
 import java.lang.reflect.Type;
 import java.util.List;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.reflect.TypeToken;
 
 public class GsonImpl extends AbstractJSONImpl {
     // weak reference of com.google.gson.Gson, prevent throw exception when init
     private volatile Object gsonCache = null;
+
+    @Override
+    public boolean isJson(String json) {
+        try {
+            JsonElement jsonElement = JsonParser.parseString(json);
+            return jsonElement.isJsonObject() || jsonElement.isJsonArray();
+        } catch (JsonSyntaxException e) {
+            return false;
+        }
+    }
 
     @Override
     public <T> T toJavaObject(String json, Type type) {
@@ -33,7 +46,8 @@ public class GsonImpl extends AbstractJSONImpl {
 
     @Override
     public <T> List<T> toJavaList(String json, Class<T> clazz) {
-        return getGson().fromJson(json, TypeToken.getParameterized(List.class, clazz).getType());
+        return getGson()
+                .fromJson(json, TypeToken.getParameterized(List.class, clazz).getType());
     }
 
     @Override

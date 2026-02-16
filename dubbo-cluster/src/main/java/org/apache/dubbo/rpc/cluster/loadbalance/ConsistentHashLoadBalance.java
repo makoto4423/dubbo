@@ -47,7 +47,7 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
      */
     public static final String HASH_ARGUMENTS = "hash.arguments";
 
-    private final ConcurrentMap<String, ConsistentHashSelector<?>> selectors = new ConcurrentHashMap<String, ConsistentHashSelector<?>>();
+    private final ConcurrentMap<String, ConsistentHashSelector<?>> selectors = new ConcurrentHashMap<>();
 
     @SuppressWarnings("unchecked")
     @Override
@@ -75,7 +75,7 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
         private final int[] argumentIndex;
 
         ConsistentHashSelector(List<Invoker<T>> invokers, String methodName, int identityHashCode) {
-            this.virtualInvokers = new TreeMap<Long, Invoker<T>>();
+            this.virtualInvokers = new TreeMap<>();
             this.identityHashCode = identityHashCode;
             URL url = invokers.get(0).getUrl();
             this.replicaNumber = url.getMethodParameter(methodName, HASH_NODES, 160);
@@ -97,12 +97,10 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
         }
 
         public Invoker<T> select(Invocation invocation) {
-            byte[] digest = Bytes.getMD5(RpcUtils.getMethodName(invocation));
-            return selectForKey(hash(digest, 0));
-        }
+            String key = toKey(RpcUtils.getArguments(invocation));
 
-        private String toKey(Object[] args, boolean isGeneric) {
-            return isGeneric ? toKey((Object[]) args[1]) : toKey(args);
+            byte[] digest = Bytes.getMD5(key);
+            return selectForKey(hash(digest, 0));
         }
 
         private String toKey(Object[] args) {
@@ -125,11 +123,10 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
 
         private long hash(byte[] digest, int number) {
             return (((long) (digest[3 + number * 4] & 0xFF) << 24)
-                    | ((long) (digest[2 + number * 4] & 0xFF) << 16)
-                    | ((long) (digest[1 + number * 4] & 0xFF) << 8)
-                    | (digest[number * 4] & 0xFF))
+                            | ((long) (digest[2 + number * 4] & 0xFF) << 16)
+                            | ((long) (digest[1 + number * 4] & 0xFF) << 8)
+                            | (digest[number * 4] & 0xFF))
                     & 0xFFFFFFFFL;
         }
     }
-
 }

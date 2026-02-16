@@ -16,9 +16,9 @@
  */
 package org.apache.dubbo.rpc.protocol.rest;
 
-
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.metadata.ParameterTypesComparator;
+import org.apache.dubbo.metadata.rest.ArgInfo;
 import org.apache.dubbo.metadata.rest.RestMethodMetadata;
 import org.apache.dubbo.metadata.rest.ServiceRestMetadata;
 import org.apache.dubbo.metadata.rest.media.MediaType;
@@ -50,11 +50,12 @@ public class RestInvoker<T> extends AbstractInvoker<T> {
     private final ReferenceCountedClient<? extends RestClient> referenceCountedClient;
     private final Set<HttpConnectionPreBuildIntercept> httpConnectionPreBuildIntercepts;
 
-
-    public RestInvoker(Class type, URL url,
-                       ReferenceCountedClient<? extends RestClient> referenceCountedClient,
-                       Set<HttpConnectionPreBuildIntercept> httpConnectionPreBuildIntercepts,
-                       ServiceRestMetadata serviceRestMetadata) {
+    public RestInvoker(
+            Class type,
+            URL url,
+            ReferenceCountedClient<? extends RestClient> referenceCountedClient,
+            Set<HttpConnectionPreBuildIntercept> httpConnectionPreBuildIntercepts,
+            ServiceRestMetadata serviceRestMetadata) {
         super(type, url);
         this.serviceRestMetadata = serviceRestMetadata;
         this.referenceCountedClient = referenceCountedClient;
@@ -65,15 +66,19 @@ public class RestInvoker<T> extends AbstractInvoker<T> {
     protected Result doInvoke(Invocation invocation) {
         try {
 
-            Map<String, Map<ParameterTypesComparator, RestMethodMetadata>> metadataMap = serviceRestMetadata.getMethodToServiceMap();
+            Map<String, Map<ParameterTypesComparator, RestMethodMetadata>> metadataMap =
+                    serviceRestMetadata.getMethodToServiceMap();
             //  get metadata
-            RestMethodMetadata restMethodMetadata = metadataMap.get(invocation.getMethodName()).get(ParameterTypesComparator.getInstance(invocation.getParameterTypes()));
+            RestMethodMetadata restMethodMetadata = metadataMap
+                    .get(invocation.getMethodName())
+                    .get(ParameterTypesComparator.getInstance(invocation.getParameterTypes()));
 
             // create requestTemplate
-            RequestTemplate requestTemplate = new RequestTemplate(invocation, restMethodMetadata.getRequest().getMethod(), getUrl().getAddress());
+            RequestTemplate requestTemplate = new RequestTemplate(
+                    invocation, restMethodMetadata.getRequest().getMethod(), getUrl().getAddress());
 
-            HttpConnectionCreateContext httpConnectionCreateContext =
-                createHttpConnectionCreateContext(invocation, serviceRestMetadata, restMethodMetadata, requestTemplate);
+            HttpConnectionCreateContext httpConnectionCreateContext = createHttpConnectionCreateContext(
+                    invocation, serviceRestMetadata, restMethodMetadata, requestTemplate);
 
             // fill real  data
             for (HttpConnectionPreBuildIntercept intercept : httpConnectionPreBuildIntercepts) {
@@ -81,7 +86,8 @@ public class RestInvoker<T> extends AbstractInvoker<T> {
             }
 
             // TODO check rest client cannot be reused
-            CompletableFuture<RestResult> future = referenceCountedClient.getClient().send(requestTemplate);
+            CompletableFuture<RestResult> future =
+                    referenceCountedClient.getClient().send(requestTemplate);
             CompletableFuture<AppResponse> responseFuture = new CompletableFuture<>();
             AsyncRpcResult asyncRpcResult = new AsyncRpcResult(responseFuture, invocation);
             future.whenComplete((r, t) -> {
@@ -102,9 +108,12 @@ public class RestInvoker<T> extends AbstractInvoker<T> {
                             responseFuture.completeExceptionally(new RemoteServerInternalException(r.getMessage()));
                         } else if (responseCode < 400) {
                             Method reflectMethod = restMethodMetadata.getReflectMethod();
-                            mediaType = MediaTypeUtil.convertMediaType(reflectMethod.getReturnType(), r.getContentType());
-                            Object value = HttpMessageCodecManager.httpMessageDecode(r.getBody(),
-                                reflectMethod.getReturnType(), reflectMethod.getGenericReturnType(), mediaType);
+                            mediaType =
+                                    MediaTypeUtil.convertMediaType(reflectMethod.getReturnType(), r.getContentType());
+                            ArgInfo argInfo = new ArgInfo();
+                            argInfo.setParamType(reflectMethod.getReturnType());
+                            argInfo.setActualType(reflectMethod.getGenericReturnType());
+                            Object value = HttpMessageCodecManager.httpMessageDecode(r.getBody(), argInfo, mediaType);
                             appResponse.setValue(value);
                             // resolve response attribute & attachment
                             HttpHeaderUtil.parseResponseHeader(appResponse, r);
@@ -130,7 +139,11 @@ public class RestInvoker<T> extends AbstractInvoker<T> {
      * @param requestTemplate
      * @return
      */
-    private HttpConnectionCreateContext createHttpConnectionCreateContext(Invocation invocation, ServiceRestMetadata serviceRestMetadata, RestMethodMetadata restMethodMetadata, RequestTemplate requestTemplate) {
+    private HttpConnectionCreateContext createHttpConnectionCreateContext(
+            Invocation invocation,
+            ServiceRestMetadata serviceRestMetadata,
+            RestMethodMetadata restMethodMetadata,
+            RequestTemplate requestTemplate) {
         HttpConnectionCreateContext httpConnectionCreateContext = new HttpConnectionCreateContext();
         httpConnectionCreateContext.setRequestTemplate(requestTemplate);
         httpConnectionCreateContext.setRestMethodMetadata(restMethodMetadata);

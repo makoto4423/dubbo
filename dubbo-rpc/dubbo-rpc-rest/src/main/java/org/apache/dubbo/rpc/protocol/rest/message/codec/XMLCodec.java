@@ -18,11 +18,10 @@ package org.apache.dubbo.rpc.protocol.rest.message.codec;
 
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.extension.Activate;
+import org.apache.dubbo.metadata.rest.ArgInfo;
 import org.apache.dubbo.metadata.rest.media.MediaType;
 import org.apache.dubbo.rpc.protocol.rest.message.HttpMessageCodec;
 import org.apache.dubbo.rpc.protocol.rest.message.MediaTypeMatcher;
-
-import org.xml.sax.InputSource;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
@@ -30,9 +29,11 @@ import javax.xml.bind.Unmarshaller;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Source;
 import javax.xml.transform.sax.SAXSource;
+
 import java.io.OutputStream;
 import java.io.StringReader;
-import java.lang.reflect.Type;
+
+import org.xml.sax.InputSource;
 
 /**
  *  body content-type is xml
@@ -40,10 +41,8 @@ import java.lang.reflect.Type;
 @Activate("xml")
 public class XMLCodec implements HttpMessageCodec<byte[], OutputStream> {
 
-
     @Override
-    public Object decode(byte[] body, Class<?> targetType, Type type) throws Exception {
-
+    public Object decode(byte[] body, ArgInfo argInfo) throws Exception {
 
         SAXParserFactory spf = SAXParserFactory.newInstance();
         spf.setFeature("http://xml.org/sax/features/external-general-entities", false);
@@ -51,12 +50,12 @@ public class XMLCodec implements HttpMessageCodec<byte[], OutputStream> {
         spf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
 
         // Do unmarshall operation
-        Source xmlSource = new SAXSource(spf.newSAXParser().getXMLReader(), new InputSource(new StringReader(new String(body))));
+        Source xmlSource =
+                new SAXSource(spf.newSAXParser().getXMLReader(), new InputSource(new StringReader(new String(body))));
 
-        JAXBContext context = JAXBContext.newInstance(targetType);
+        JAXBContext context = JAXBContext.newInstance(argInfo.getParamType());
         Unmarshaller unmarshaller = context.createUnmarshaller();
         return unmarshaller.unmarshal(xmlSource);
-
     }
 
     @Override
@@ -74,12 +73,10 @@ public class XMLCodec implements HttpMessageCodec<byte[], OutputStream> {
         return MediaType.TEXT_XML;
     }
 
-
     @Override
     public void encode(OutputStream outputStream, Object unSerializedBody, URL url) throws Exception {
-        Marshaller marshaller = JAXBContext.newInstance(unSerializedBody.getClass()).createMarshaller();
+        Marshaller marshaller =
+                JAXBContext.newInstance(unSerializedBody.getClass()).createMarshaller();
         marshaller.marshal(unSerializedBody, outputStream);
     }
-
-
 }

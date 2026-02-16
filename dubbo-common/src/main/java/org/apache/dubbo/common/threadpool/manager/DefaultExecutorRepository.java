@@ -64,7 +64,8 @@ import static org.apache.dubbo.common.constants.LoggerCodeConstants.COMMON_UNEXP
  * 线程池类型并发
  */
 public class DefaultExecutorRepository implements ExecutorRepository, ExtensionAccessorAware {
-    private static final ErrorTypeAwareLogger logger = LoggerFactory.getErrorTypeAwareLogger(DefaultExecutorRepository.class);
+    private static final ErrorTypeAwareLogger logger =
+            LoggerFactory.getErrorTypeAwareLogger(DefaultExecutorRepository.class);
 
     private static final String MAX_KEY = String.valueOf(Integer.MAX_VALUE);
 
@@ -85,7 +86,8 @@ public class DefaultExecutorRepository implements ExecutorRepository, ExtensionA
 
     public DefaultExecutorRepository(ApplicationModel applicationModel) {
         this.applicationModel = applicationModel;
-        this.frameworkExecutorRepository = applicationModel.getFrameworkModel().getBeanFactory().getBean(FrameworkExecutorRepository.class);
+        this.frameworkExecutorRepository =
+                applicationModel.getFrameworkModel().getBeanFactory().getBean(FrameworkExecutorRepository.class);
         this.dataStore = applicationModel.getExtensionLoader(DataStore.class).getDefaultExtension();
     }
 
@@ -98,14 +100,16 @@ public class DefaultExecutorRepository implements ExecutorRepository, ExtensionA
     @Override
     public synchronized ExecutorService createExecutorIfAbsent(URL url) {
         String executorKey = getExecutorKey(url);
-        ConcurrentMap<String, ExecutorService> executors = ConcurrentHashMapUtils.computeIfAbsent(data, executorKey, k -> new ConcurrentHashMap<>());
+        ConcurrentMap<String, ExecutorService> executors =
+                ConcurrentHashMapUtils.computeIfAbsent(data, executorKey, k -> new ConcurrentHashMap<>());
 
         String executorCacheKey = getExecutorSecondKey(url);
 
         url = setThreadNameIfAbsent(url, executorCacheKey);
 
         URL finalUrl = url;
-        ExecutorService executor = ConcurrentHashMapUtils.computeIfAbsent(executors, executorCacheKey, k -> createExecutor(finalUrl));
+        ExecutorService executor =
+                ConcurrentHashMapUtils.computeIfAbsent(executors, executorCacheKey, k -> createExecutor(finalUrl));
         // If executor has been shut down, create a new one
         if (executor.isShutdown() || executor.isTerminated()) {
             executors.remove(executorCacheKey);
@@ -185,7 +189,10 @@ public class DefaultExecutorRepository implements ExecutorRepository, ExtensionA
     }
 
     protected ExecutorService createExecutor(URL url) {
-        return (ExecutorService) extensionAccessor.getExtensionLoader(ThreadPool.class).getAdaptiveExtension().getExecutor(url);
+        return (ExecutorService) extensionAccessor
+                .getExtensionLoader(ThreadPool.class)
+                .getAdaptiveExtension()
+                .getExecutor(url);
     }
 
     @Override
@@ -197,8 +204,12 @@ public class DefaultExecutorRepository implements ExecutorRepository, ExtensionA
          * have Executor instances generated and stored.
          */
         if (executors == null) {
-            logger.warn(COMMON_EXECUTORS_NO_FOUND, "", "", "No available executors, this is not expected, framework should call createExecutorIfAbsent first" +
-                "before coming to here.");
+            logger.warn(
+                    COMMON_EXECUTORS_NO_FOUND,
+                    "",
+                    "",
+                    "No available executors, this is not expected, framework should call createExecutorIfAbsent first"
+                            + "before coming to here.");
 
             return null;
         }
@@ -228,8 +239,12 @@ public class DefaultExecutorRepository implements ExecutorRepository, ExtensionA
          * have Executor instances generated and stored.
          */
         if (executors == null) {
-            logger.warn(COMMON_EXECUTORS_NO_FOUND, "", "", "No available executors, this is not expected, framework should call createExecutorIfAbsent first" +
-                "before coming to here.");
+            logger.warn(
+                    COMMON_EXECUTORS_NO_FOUND,
+                    "",
+                    "",
+                    "No available executors, this is not expected, framework should call createExecutorIfAbsent first"
+                            + "before coming to here.");
 
             return null;
         }
@@ -253,8 +268,7 @@ public class DefaultExecutorRepository implements ExecutorRepository, ExtensionA
     @Override
     public void updateThreadpool(URL url, ExecutorService executor) {
         try {
-            if (url.hasParameter(THREADS_KEY)
-                && executor instanceof ThreadPoolExecutor && !executor.isShutdown()) {
+            if (url.hasParameter(THREADS_KEY) && executor instanceof ThreadPoolExecutor && !executor.isShutdown()) {
                 ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
                 int threads = url.getParameter(THREADS_KEY, 0);
                 int max = threadPoolExecutor.getMaximumPoolSize();
@@ -285,8 +299,8 @@ public class DefaultExecutorRepository implements ExecutorRepository, ExtensionA
                 int coreSize = getExportThreadNum();
                 String applicationName = applicationModel.tryGetApplicationName();
                 applicationName = StringUtils.isEmpty(applicationName) ? "app" : applicationName;
-                serviceExportExecutor = Executors.newScheduledThreadPool(coreSize,
-                    new NamedThreadFactory("Dubbo-" + applicationName + "-service-export", true));
+                serviceExportExecutor = Executors.newScheduledThreadPool(
+                        coreSize, new NamedThreadFactory("Dubbo-" + applicationName + "-service-export", true));
             }
         }
         return serviceExportExecutor;
@@ -314,8 +328,8 @@ public class DefaultExecutorRepository implements ExecutorRepository, ExtensionA
                 int coreSize = getReferThreadNum();
                 String applicationName = applicationModel.tryGetApplicationName();
                 applicationName = StringUtils.isEmpty(applicationName) ? "app" : applicationName;
-                serviceReferExecutor = Executors.newFixedThreadPool(coreSize,
-                    new NamedThreadFactory("Dubbo-" + applicationName + "-service-refer", true));
+                serviceReferExecutor = Executors.newFixedThreadPool(
+                        coreSize, new NamedThreadFactory("Dubbo-" + applicationName + "-service-refer", true));
             }
         }
         return serviceReferExecutor;
@@ -345,7 +359,8 @@ public class DefaultExecutorRepository implements ExecutorRepository, ExtensionA
             }
         }
         if (threadNum == null) {
-            logger.info("Cannot get config `export-thread-num` from module config, using default: " + DEFAULT_EXPORT_THREAD_NUM);
+            logger.info("Cannot get config `export-thread-num` from module config, using default: "
+                    + DEFAULT_EXPORT_THREAD_NUM);
             return DEFAULT_EXPORT_THREAD_NUM;
         }
         return threadNum;
@@ -358,11 +373,11 @@ public class DefaultExecutorRepository implements ExecutorRepository, ExtensionA
         }
         Integer threadNum = moduleConfig.getExportThreadNum();
         if (threadNum == null) {
-            threadNum = moduleModel.getConfigManager().getProviders()
-                .stream()
-                .map(ProviderConfig::getExportThreadNum)
-                .filter(k -> k != null && k > 0)
-                .findAny().orElse(null);
+            threadNum = moduleModel.getConfigManager().getProviders().stream()
+                    .map(ProviderConfig::getExportThreadNum)
+                    .filter(k -> k != null && k > 0)
+                    .findAny()
+                    .orElse(null);
         }
         return threadNum;
     }
@@ -377,7 +392,8 @@ public class DefaultExecutorRepository implements ExecutorRepository, ExtensionA
             }
         }
         if (threadNum == null) {
-            logger.info("Cannot get config `refer-thread-num` from module config, using default: " + DEFAULT_REFER_THREAD_NUM);
+            logger.info("Cannot get config `refer-thread-num` from module config, using default: "
+                    + DEFAULT_REFER_THREAD_NUM);
             return DEFAULT_REFER_THREAD_NUM;
         }
         return threadNum;
@@ -390,11 +406,11 @@ public class DefaultExecutorRepository implements ExecutorRepository, ExtensionA
         }
         Integer threadNum = moduleConfig.getReferThreadNum();
         if (threadNum == null) {
-            threadNum = moduleModel.getConfigManager().getConsumers()
-                .stream()
-                .map(ConsumerConfig::getReferThreadNum)
-                .filter(k -> k != null && k > 0)
-                .findAny().orElse(null);
+            threadNum = moduleModel.getConfigManager().getConsumers().stream()
+                    .map(ConsumerConfig::getReferThreadNum)
+                    .filter(k -> k != null && k > 0)
+                    .findAny()
+                    .orElse(null);
         }
         return threadNum;
     }
